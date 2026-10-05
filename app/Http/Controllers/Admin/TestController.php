@@ -29,7 +29,7 @@ class TestController extends Controller
                 'title' => $request->title,
                 'description' => $request->description,
                 'duration' => $request->duration,
-                'passing_score' => $request->passing_score ?? 70,
+                'passing_score' => $request->passing_score ?? 95,
                 'course_id' => $request->course_id,
                 'folder_id' => $request->folder_id,
                 'status' => 'draft',

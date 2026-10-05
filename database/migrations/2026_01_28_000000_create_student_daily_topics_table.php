@@ -6,11 +6,10 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
     /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('student_daily_topics', function (Blueprint $table) {
+        if (!Schema::hasTable('student_daily_topics')) {
+            Schema::create('student_daily_topics', function (Blueprint $table) {
             $table->id();
             $table->foreignId('student_daily_status_id')->constrained()->onDelete('cascade');
             $table->string('topic')->nullable();
@@ -19,6 +18,7 @@ return new class extends Migration {
             $table->string('duration')->nullable(); // Can store formatted duration or minutes
             $table->timestamps();
         });
+        }
     }
 
     /**

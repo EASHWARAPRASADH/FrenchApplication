@@ -643,7 +643,7 @@
                                 <div class="mb-3">
                                     <label for="testPassingScore" class="form-label">Passing Score (%)</label>
                                     <input type="number" class="form-control" id="testPassingScore" min="0" max="100"
-                                        value="70">
+                                        value="95">
                                 </div>
                             </div>
                         </div>
