@@ -50,64 +50,63 @@
         </div>
 
         {{-- Performance Overview Cards --}}
-        <div class="row mb-3">
-            <div class="col-md-2">
-                <div class="card text-center">
-                    <div class="card-body">
+        <div class="row g-3 mb-3 row-cols-2 row-cols-md-3 row-cols-lg-5">
+            <div class="col">
+                <div class="card text-center h-100 shadow-sm border-0">
+                    <div class="card-body d-flex flex-column justify-content-center p-3">
                         <h6 class="text-muted mb-2">Average Score</h6>
-                        <h2 class="mb-0 text-primary">{{ $metrics['avg_score'] }}%</h2>
+                        <h2 class="mb-0 text-primary fw-bold">{{ $metrics['avg_score'] }}%</h2>
+                        @if(!empty($metrics['pending_evaluations']) && $metrics['pending_evaluations'] > 0)
+                            <small class="text-muted mt-1">{{ $metrics['graded_count'] }} graded tests</small>
+                        @endif
                     </div>
                 </div>
             </div>
-            <div class="col-md-2">
-                <div class="card text-center">
-                    <div class="card-body">
+            <div class="col">
+                <div class="card text-center h-100 shadow-sm border-0">
+                    <div class="card-body d-flex flex-column justify-content-center p-3">
                         <h6 class="text-muted mb-2">Tests Completed</h6>
-                        <h2 class="mb-0 text-success">{{ $metrics['tests_completed'] }}</h2>
+                        <h2 class="mb-0 text-success fw-bold">{{ $metrics['tests_completed'] }}</h2>
+                        @if(!empty($metrics['pending_evaluations']) && $metrics['pending_evaluations'] > 0)
+                            <small class="text-warning mt-1"><i class="bi bi-clock me-1"></i>{{ $metrics['pending_evaluations'] }} pending review</small>
+                        @endif
                     </div>
                 </div>
             </div>
-            <div class="col-md-2">
-                <div class="card text-center">
-                    <div class="card-body">
+            <div class="col">
+                <div class="card text-center h-100 shadow-sm border-0">
+                    <div class="card-body d-flex flex-column justify-content-center p-3">
                         <h6 class="text-muted mb-2">Study Time</h6>
-                        <h2 class="mb-0 text-info">{{ $metrics['total_time'] }}h</h2>
+                        <h2 class="mb-0 text-info fw-bold">{{ $metrics['total_time'] }}h</h2>
+                        <small class="text-muted mt-1">Total time spent</small>
                     </div>
                 </div>
             </div>
-            <div class="col-md-2">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h6 class="text-muted mb-2">Current Streak</h6>
-                        <h2 class="mb-0 text-warning">{{ $metrics['current_streak'] }}</h2>
-                        <small class="text-muted">days</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card text-center">
-                    <div class="card-body">
+            <div class="col">
+                <div class="card text-center h-100 shadow-sm border-0">
+                    <div class="card-body d-flex flex-column justify-content-center p-3">
                         <h6 class="text-muted mb-2">Pass Rate</h6>
-                        <h2 class="mb-0 text-success">{{ $metrics['pass_rate'] }}%</h2>
+                        <h2 class="mb-0 text-success fw-bold">{{ $metrics['pass_rate'] }}%</h2>
+                        <small class="text-muted mt-1">Graded tests</small>
                     </div>
                 </div>
             </div>
-            <div class="col-md-2">
-                <div class="card text-center">
-                    <div class="card-body">
+            <div class="col">
+                <div class="card text-center h-100 shadow-sm border-0">
+                    <div class="card-body d-flex flex-column justify-content-center p-3">
                         <h6 class="text-muted mb-2">Improvement</h6>
-                        <h2 class="mb-0 {{ $metrics['improvement'] >= 0 ? 'text-success' : 'text-danger' }}">
+                        <h2 class="mb-0 fw-bold {{ $metrics['improvement'] >= 0 ? 'text-success' : 'text-danger' }}">
                             {{ $metrics['improvement'] > 0 ? '+' : '' }}{{ $metrics['improvement'] }}%
                         </h2>
-                        <small class="text-muted">vs previous</small>
+                        <small class="text-muted mt-1">vs previous</small>
                     </div>
                 </div>
             </div>
         </div>
 
         {{-- Score Progression Chart --}}
-        <div class="card mb-3">
-            <div class="card-header">
+        <div class="card mb-3 shadow-sm border-0">
+            <div class="card-header bg-white py-3">
                 <strong><i class="bi bi-graph-up me-2"></i>Score Progression</strong>
             </div>
             <div class="card-body">
@@ -116,14 +115,15 @@
         </div>
 
         {{-- Test History Table --}}
-        <div class="card">
-            <div class="card-header">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                 <strong><i class="bi bi-list-check me-2"></i>Test History</strong>
+                <span class="badge bg-secondary">{{ $testHistory->total() }} Total Attempts</span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead>
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
                             <tr>
                                 <th>Test Name</th>
                                 <th>Course</th>
@@ -132,34 +132,65 @@
                                 <th>Status</th>
                                 <th>Time Spent</th>
                                 <th>Attempt</th>
+                                <th class="text-end pe-3">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($testHistory as $attempt)
                                 <tr>
-                                    <td>{{ $attempt->test->title }}</td>
-                                    <td>{{ $attempt->test->course->title ?? 'N/A' }}</td>
-                                    <td>{{ $attempt->completed_at->format('M d, Y') }}</td>
                                     <td>
-                                        <span
-                                            class="badge {{ $attempt->score >= 70 ? 'bg-success' : ($attempt->score >= 50 ? 'bg-warning' : 'bg-danger') }}">
-                                            {{ $attempt->score }}%
-                                        </span>
+                                        <strong>{{ $attempt->test->title }}</strong>
+                                    </td>
+                                    <td>{{ $attempt->test->course->title ?? 'N/A' }}</td>
+                                    <td>{{ $attempt->completed_at ? $attempt->completed_at->format('M d, Y') : 'N/A' }}</td>
+                                    <td>
+                                        @if(!empty($attempt->is_pending_evaluation))
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-clock me-1"></i>Pending
+                                            </span>
+                                        @else
+                                            <span class="badge {{ $attempt->score >= 70 ? 'bg-success' : ($attempt->score >= 50 ? 'bg-warning' : 'bg-danger') }}">
+                                                {{ number_format($attempt->score, 2) }}%
+                                            </span>
+                                        @endif
                                     </td>
                                     <td>
-                                        @if($attempt->passed)
+                                        @if(!empty($attempt->is_pending_evaluation))
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-hourglass-split me-1"></i>Under Review
+                                            </span>
+                                        @elseif($attempt->passed)
                                             <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Passed</span>
                                         @else
-                                            <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Failed</span>
+                                            @php
+                                                $passingScore = round($attempt->test->passing_score ?? 70);
+                                            @endphp
+                                            <span class="badge bg-danger" title="Required passing score: {{ $passingScore }}%">
+                                                <i class="bi bi-x-circle me-1"></i>Failed
+                                                @if($passingScore > 70)
+                                                    <small class="text-white-50">({{ $passingScore }}%)</small>
+                                                @endif
+                                            </span>
                                         @endif
                                     </td>
                                     <td>{{ gmdate('H:i:s', $attempt->time_taken) }}</td>
-                                    <td>{{ $attempt->attempt_number }}</td>
+                                    <td><span class="badge bg-light text-dark border">{{ $attempt->attempt_number }}</span></td>
+                                    <td class="text-end pe-3">
+                                        @if(auth()->user()->role === 'admin' && !empty($attempt->submission_id))
+                                            <a href="{{ route('admin.test-submissions.show', $attempt->submission_id) }}" class="btn btn-sm btn-outline-primary" title="Review submission">
+                                                <i class="bi bi-pencil-square me-1"></i>Review
+                                            </a>
+                                        @else
+                                            <a href="{{ route('student.test.results', ['test' => $attempt->test_id, 'attempt' => $attempt->id]) }}" class="btn btn-sm btn-outline-secondary" title="View details">
+                                                <i class="bi bi-eye me-1"></i>View
+                                            </a>
+                                        @endif
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">
-                                        <i class="bi bi-inbox display-4 d-block mb-2"></i>
+                                    <td colspan="8" class="text-center text-muted py-5">
+                                        <i class="bi bi-inbox display-4 d-block mb-2 text-muted"></i>
                                         No test attempts found
                                     </td>
                                 </tr>
@@ -168,6 +199,18 @@
                     </table>
                 </div>
             </div>
+            @if($testHistory->hasPages())
+                <div class="card-footer bg-white py-3 border-0">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <small class="text-muted">
+                            Showing {{ $testHistory->firstItem() ?? 0 }} to {{ $testHistory->lastItem() ?? 0 }} of {{ $testHistory->total() }} attempts
+                        </small>
+                        <div>
+                            {{ $testHistory->links() }}
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 

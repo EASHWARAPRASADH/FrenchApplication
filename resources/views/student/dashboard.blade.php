@@ -527,11 +527,7 @@
                 <span class="welcome-icon">☀️</span>
                 <h1 class="welcome-title">Bonjour, {{ $user->name }}!</h1>
                 <p class="welcome-subtitle">
-                    @if($currentStreak > 0)
-                        Amazing! You're on a {{ $currentStreak }}-day streak! Keep up the fantastic work! 🔥
-                    @else
-                        Ready to continue your French learning journey? Let's start building your study streak!
-                    @endif
+                    Ready to continue your French learning journey? Let's keep up the fantastic work!
                 </p>
             </div>
         </div>

@@ -1349,18 +1349,21 @@ class DashboardController extends Controller
      */
     public function showTestResults(\App\Models\Test $test, \App\Models\StudentTestAttempt $attempt)
     {
-        // Verify the attempt belongs to the current user
-        if ($attempt->student_id !== Auth::id()) {
+        // Verify the attempt belongs to the current user (or user is admin)
+        $studentId = $attempt->student_id;
+        if ($studentId !== Auth::id() && Auth::user()?->role !== 'admin') {
             abort(403, 'Access denied.');
         }
 
-        // Check enrollment
-        $enrollment = Enrollment::where('user_id', Auth::id())
-            ->where('course_id', $test->course_id)
-            ->first();
+        // Check enrollment if student
+        if (Auth::user()?->role !== 'admin') {
+            $enrollment = Enrollment::where('user_id', Auth::id())
+                ->where('course_id', $test->course_id)
+                ->first();
 
-        if (!$enrollment) {
-            abort(403, 'You must be enrolled in this course to view results.');
+            if (!$enrollment) {
+                abort(403, 'You must be enrolled in this course to view results.');
+            }
         }
 
         // Load test with questions and options (we'll also create a sorted collection for consistent indexing)
@@ -1368,7 +1371,7 @@ class DashboardController extends Controller
         $questions = $test->questions->sortBy('order')->values();
 
         // Get all attempts for this test
-        $allAttempts = StudentTestAttempt::where('student_id', Auth::id())
+        $allAttempts = StudentTestAttempt::where('student_id', $studentId)
             ->where('test_id', $test->id)
             ->orderBy('attempt_number', 'desc')
             ->get();
@@ -1385,7 +1388,7 @@ class DashboardController extends Controller
         }
 
         // Load submission for this attempt (used for score and answers)
-        $submission = TestSubmission::where('student_id', Auth::id())
+        $submission = TestSubmission::where('student_id', $studentId)
             ->where('test_id', $test->id)
             ->where('attempt_number', $attempt->attempt_number)
             ->latest('submitted_at')

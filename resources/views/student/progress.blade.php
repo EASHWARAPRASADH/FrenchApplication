@@ -392,11 +392,11 @@
             <div class="stat-label">Tests Passed</div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon streak">
-                <i class="bi bi-fire"></i>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">
+                <i class="bi bi-pie-chart"></i>
             </div>
-            <div class="stat-number">{{ $currentStreak }}</div>
-            <div class="stat-label">Day Streak</div>
+            <div class="stat-number">{{ $overallProgress }}%</div>
+            <div class="stat-label">Overall Progress</div>
         </div>
     </div>
 
