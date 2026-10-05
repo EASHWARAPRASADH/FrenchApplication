@@ -524,7 +524,7 @@
                             Showing {{ $testHistory->firstItem() ?? 0 }} to {{ $testHistory->lastItem() ?? 0 }} of {{ $testHistory->total() }} attempts
                         </small>
                         <div>
-                            {{ $testHistory->links() }}
+                            {{ $testHistory->links('pagination::bootstrap-5') }}
                         </div>
                     </div>
                 </div>
@@ -533,7 +533,7 @@
     </div>
 
     @push('scripts')
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
         <script>
             // Switch filter pane based on mode
             function switchFilterMode(mode) {
