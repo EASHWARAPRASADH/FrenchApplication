@@ -620,6 +620,28 @@ class DashboardController extends Controller
     }
 
     /**
+     * Enroll authenticated student in a course
+     */
+    public function enroll(Course $course)
+    {
+        $user = Auth::user();
+        if ($user->role !== 'student') {
+            return redirect()->back()->with('error', 'Only students can enroll in courses.');
+        }
+
+        Enrollment::firstOrCreate([
+            'user_id' => $user->id,
+            'course_id' => $course->id
+        ], [
+            'status' => 'active',
+            'enrolled_at' => now()
+        ]);
+
+        return redirect()->route('student.course.show', $course)
+            ->with('success', 'You have successfully enrolled in ' . $course->title . '!');
+    }
+
+    /**
      * Show contents of a folder within a course (subfolders, lessons, tests)
      */
     public function showFolder(Course $course, CourseFolder $folder)
@@ -1277,50 +1299,58 @@ class DashboardController extends Controller
                 $passed = $scorePercentage >= $test->passing_score;
             }
 
-            // Update attempt (only status and completion time)
-            $currentAttempt->update([
-                'status' => 'completed', // Attempt is finished even if evaluation is pending
-                'completed_at' => now(),
-                'score' => $scorePercentage,
-                'passed' => $passed,
-                'time_taken' => $request->time_taken
-            ]);
+            \Illuminate\Support\Facades\DB::beginTransaction();
+            try {
+                // Update attempt
+                $currentAttempt->update([
+                    'status' => 'completed', // Attempt is finished even if evaluation is pending
+                    'completed_at' => now(),
+                    'score' => $scorePercentage,
+                    'passed' => $passed,
+                    'time_taken' => $request->time_taken
+                ]);
 
-            // Create test submission record
-            $submission = TestSubmission::create([
-                'student_id' => Auth::id(),
-                'test_id' => $test->id,
-                'score' => $scorePercentage,
-                'passed' => $passed,
-                'submitted_at' => now(),
-                'answers' => $answers,
-                'time_taken' => $request->time_taken,
-                'attempt_number' => $currentAttempt->attempt_number,
-                'status' => $status
-            ]);
+                // Create test submission record
+                $submission = TestSubmission::create([
+                    'student_id' => Auth::id(),
+                    'test_id' => $test->id,
+                    'score' => $scorePercentage,
+                    'passed' => $passed,
+                    'submitted_at' => now(),
+                    'answers' => $answers,
+                    'time_taken' => $request->time_taken,
+                    'attempt_number' => $currentAttempt->attempt_number,
+                    'status' => $status
+                ]);
 
-            // Award points if test is passed (skip for pending evaluation)
-            if ($passed && !$isExpressionEcrite) {
-                $user = Auth::user();
-                $pointsAwarded = 25; // Base points for passing a test
+                // Award points if test is passed (skip for pending evaluation)
+                if ($passed && !$isExpressionEcrite) {
+                    $user = Auth::user();
+                    $pointsAwarded = 25; // Base points for passing a test
 
-                // Award bonus points based on score
-                if ($scorePercentage >= 90) {
-                    $pointsAwarded += 15; // Perfect score bonus
-                } elseif ($scorePercentage >= 80) {
-                    $pointsAwarded += 10; // Good score bonus
-                } elseif ($scorePercentage >= 70) {
-                    $pointsAwarded += 5; // Passing bonus
+                    // Award bonus points based on score
+                    if ($scorePercentage >= 90) {
+                        $pointsAwarded += 15; // Perfect score bonus
+                    } elseif ($scorePercentage >= 80) {
+                        $pointsAwarded += 10; // Good score bonus
+                    } elseif ($scorePercentage >= 70) {
+                        $pointsAwarded += 5; // Passing bonus
+                    }
+
+                    // Update user points
+                    $user->points += $pointsAwarded;
+
+                    // Update level based on points (every 100 points = 1 level)
+                    $newLevel = floor($user->points / 100) + 1;
+                    $user->level = $newLevel;
+
+                    $user->save();
                 }
 
-                // Update user points
-                $user->points += $pointsAwarded;
-
-                // Update level based on points (every 100 points = 1 level)
-                $newLevel = floor($user->points / 100) + 1;
-                $user->level = $newLevel;
-
-                $user->save();
+                \Illuminate\Support\Facades\DB::commit();
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\DB::rollBack();
+                throw $e;
             }
 
             return response()->json([

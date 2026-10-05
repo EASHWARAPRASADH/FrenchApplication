@@ -49,11 +49,6 @@ class StudentStatusController extends Controller
         return view('student.status.index', compact('days', 'date'));
     }
 
-    public function update(Request $request)
-    {
-        return response()->json(['success' => false, 'message' => 'Deprecated']);
-    }
-
     public function storeTopic(Request $request)
     {
         $request->validate([

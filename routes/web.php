@@ -19,61 +19,37 @@ Route::get('/', function () {
     return view('home');
 })->name('home');
 
-// Fix nav links from Next.js landing page
+// Static navigation redirects
 Route::get('/media-library', function () {
-    return redirect('/courses');
-});
-Route::get('/media-library/', function () {
     return redirect('/courses');
 });
 
 Route::get('/certification', function () {
     return redirect('/courses');
 });
-Route::get('/certification/', function () {
-    return redirect('/courses');
-});
 
 Route::get('/membership', function () {
-    return redirect('/join-now');
-});
-Route::get('/membership/', function () {
-    return redirect('/join-now');
+    return redirect()->route('login');
 });
 
 Route::get('/contact', function () {
-    return redirect('/about');
-});
-Route::get('/contact/', function () {
     return redirect('/about');
 });
 
 Route::get('/courses/french', function () {
     return redirect('/courses');
 });
-Route::get('/courses/french/', function () {
+
+Route::get('/exams/orientation-test', function () {
     return redirect('/courses');
 });
 
-Route::get('/exams/orientation-test', function () {
-    return redirect('/test');
-});
-Route::get('/exams/orientation-test/', function () {
-    return redirect('/test');
-});
-
 Route::get('/auth/sign-in', function () {
-    return redirect('/login');
-});
-Route::get('/auth/sign-in/', function () {
-    return redirect('/login');
+    return redirect()->route('login');
 });
 
 Route::get('/auth/register', function () {
-    return redirect('/register');
-});
-Route::get('/auth/register/', function () {
-    return redirect('/register');
+    return redirect()->route('register');
 });
 
 // Additional static pages
@@ -90,7 +66,7 @@ Route::get('/join-now', function () {
 })->name('join-now');
 
 Route::get('/test', function () {
-    return view('test');
+    return redirect()->route('courses.index');
 })->name('test');
 
 Route::get('/courses', function () {
@@ -210,7 +186,6 @@ Route::middleware(['auth', 'verified'])->prefix('student')->name('student.')->gr
 
     // Status Tracker
     Route::get('/status', [\App\Http\Controllers\Student\StudentStatusController::class, 'index'])->name('status.index');
-    Route::post('/status/update', [\App\Http\Controllers\Student\StudentStatusController::class, 'update'])->name('status.update');
     Route::post('/status/topic/store', [\App\Http\Controllers\Student\StudentStatusController::class, 'storeTopic'])->name('status.topic.store');
     Route::post('/status/topic/update', [\App\Http\Controllers\Student\StudentStatusController::class, 'updateTopic'])->name('status.topic.update');
     Route::delete('/status/topic/delete', [\App\Http\Controllers\Student\StudentStatusController::class, 'deleteTopic'])->name('status.topic.delete');

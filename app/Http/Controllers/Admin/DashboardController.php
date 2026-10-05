@@ -114,11 +114,6 @@ class DashboardController extends Controller
 
 
 
-    public function settings()
-    {
-        return view('admin.settings.index');
-    }
-
     /**
      * Show course builder page
      */
@@ -130,34 +125,6 @@ class DashboardController extends Controller
             ->get();
 
         return view('admin.course-builder.index', compact('courses'));
-    }
-
-    /**
-     * Show assignments page
-     */
-    public function assignments()
-    {
-        // Get real assignment data
-        $courses = Course::with(['teacher', 'enrollments.user'])
-            ->withCount('enrollments')
-            ->get();
-
-        return view('admin.assignments.index', compact('courses'));
-    }
-
-    /**
-     * Show analytics page
-     */
-    public function analytics()
-    {
-        $analytics = [
-            'total_users' => User::count(),
-            'total_courses' => Course::count(),
-            'total_enrollments' => Enrollment::count(),
-            'completion_rate' => 0, // Calculate completion rate
-        ];
-
-        return view('admin.analytics.index', compact('analytics'));
     }
 
     /**
@@ -289,36 +256,6 @@ class DashboardController extends Controller
 
         return redirect()->route('admin.test-submissions.show', $submission)
             ->with('success', 'Test submission updated successfully.');
-    }
-
-    /**
-     * Show file management page
-     */
-    public function files()
-    {
-        // Get real file data from storage
-        $uploadPath = storage_path('app/public');
-        $files = collect();
-
-        if (is_dir($uploadPath)) {
-            $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($uploadPath)
-            );
-
-            foreach ($iterator as $file) {
-                if ($file->isFile()) {
-                    $files->push([
-                        'name' => $file->getFilename(),
-                        'path' => str_replace($uploadPath, '', $file->getPathname()),
-                        'size' => $file->getSize(),
-                        'modified' => date('Y-m-d H:i:s', $file->getMTime()),
-                        'type' => $file->getExtension()
-                    ]);
-                }
-            }
-        }
-
-        return view('admin.files.index', compact('files'));
     }
 
     private function checkDatabaseHealth()

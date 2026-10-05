@@ -82,10 +82,23 @@
 
                     @auth
                         @if(auth()->user()->role === 'student')
-                            <button class="btn-enroll-minimal" onclick="enrollInCourse()">
-                                Enroll Now
-                            </button>
-                            <p class="enroll-note">Start learning immediately</p>
+                            @php
+                                $isEnrolled = auth()->user()->enrollments()->where('course_id', $course->id)->exists();
+                            @endphp
+                            @if($isEnrolled)
+                                <a href="{{ route('student.course.show', $course) }}" class="btn-enroll-minimal d-block text-center text-decoration-none">
+                                    Continue Learning
+                                </a>
+                                <p class="enroll-note">You are enrolled in this course</p>
+                            @else
+                                <form action="{{ route('student.course.enroll', $course) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="btn-enroll-minimal w-100">
+                                        Enroll Now
+                                    </button>
+                                </form>
+                                <p class="enroll-note">Start learning immediately</p>
+                            @endif
                         @else
                             <p class="preview-note">Course preview available</p>
                         @endif
@@ -614,12 +627,4 @@
 </style>
 @endpush
 
-@push('scripts')
-<script>
-function enrollInCourse() {
-    // This would typically make an AJAX request to enroll the user
-    alert('Enrollment functionality will be implemented in the student dashboard!');
-}
-</script>
-@endpush
 @endsection
