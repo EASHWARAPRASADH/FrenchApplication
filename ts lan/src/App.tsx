@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -6,9 +7,28 @@ import About from './pages/About';
 import Courses from './pages/Courses';
 import Contact from './pages/Contact';
 
+function PageTitleUpdater() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const titles: Record<string, string> = {
+      '/': 'TS Language School: Canada Immigration Ready TCF Prep',
+      '/about': 'About Us | TS Language School',
+      '/courses': 'French Courses & Programs | TS Language School',
+      '/contact': 'Contact Us & Enroll | TS Language School',
+      '/join-now': 'Join TS Language School | Enroll Today',
+    };
+
+    document.title = titles[location.pathname] || 'TS Language School: Canada Immigration Ready TCF Prep';
+  }, [location]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <PageTitleUpdater />
       <div className="flex min-h-screen flex-col font-sans text-slate-800 bg-slate-50">
         <Navbar />
         <main className="flex-grow">
@@ -17,6 +37,8 @@ export default function App() {
             <Route path="/about" element={<About />} />
             <Route path="/courses" element={<Courses />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/join-now" element={<Contact />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
         <Footer />
