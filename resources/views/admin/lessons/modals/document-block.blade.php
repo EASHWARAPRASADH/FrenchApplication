@@ -30,8 +30,8 @@
                         <div class="upload-area border-2 border-dashed rounded p-4 text-center" id="documentUploadArea" style="position: relative; cursor: pointer; transition: all 0.3s;">
                             <i class="bi bi-cloud-arrow-up fs-1 text-muted mb-2"></i>
                             <p class="mb-1"><strong>Click to upload or drag and drop</strong></p>
-                            <small class="text-muted">PDF, Word (.doc, .docx), PowerPoint (.ppt, .pptx) - Max 100MB</small>
-                            <input type="file" id="documentFile" accept=".pdf,.doc,.docx,.ppt,.pptx" style="position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer;" required onchange="handleDocumentInputChange(event)">
+                            <small class="text-muted">PDF, Word (.doc, .docx), PowerPoint (.ppt, .pptx), Excel (.xls, .xlsx, .csv) - Max 100MB</small>
+                            <input type="file" id="documentFile" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv" style="position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer;" required onchange="handleDocumentInputChange(event)">
                         </div>
                         <div id="documentFileInfo" class="mt-2 d-none">
                             <div class="alert alert-info mb-0">
@@ -46,7 +46,7 @@
                     <div class="mb-3">
                         <label class="form-label">Display Options</label>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="documentDownloadable" checked>
+                            <input class="form-check-input" type="checkbox" id="documentDownloadable">
                             <label class="form-check-label" for="documentDownloadable">
                                 Allow students to download
                             </label>

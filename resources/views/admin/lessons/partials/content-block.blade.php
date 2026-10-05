@@ -154,6 +154,9 @@
                             } elseif (str_contains($mimeType, 'powerpoint') || str_contains($mimeType, 'presentation')) {
                                 $icon = 'bi-file-earmark-ppt text-warning';
                                 $docType = 'PowerPoint';
+                            } elseif (str_contains($mimeType, 'excel') || str_contains($mimeType, 'spreadsheet') || str_contains($mimeType, 'csv')) {
+                                $icon = 'bi-file-earmark-spreadsheet text-success';
+                                $docType = 'Excel Spreadsheet';
                             } else {
                                 $icon = 'bi-file-earmark text-secondary';
                                 $docType = 'Document';
@@ -170,15 +173,23 @@
                                         <p class="text-muted small mb-2">{{ $block->content['description'] }}</p>
                                     @endif
                                     <small class="text-muted">
-                                        {{ $docType }} • {{ number_format($block->content['size'] / 1024, 2) }} KB
+                                        {{ $docType }} • {{ number_format(($block->content['size'] ?? 0) / 1024, 2) }} KB
                                     </small>
-                                    <div class="mt-2">
-                                        <a href="{{ $block->content['url'] }}" download class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-download me-1"></i>Download
-                                        </a>
-                                        @if($block->content['previewable'] && str_contains($mimeType, 'pdf'))
-                                            <a href="{{ $block->content['url'] }}" target="_blank" class="btn btn-sm btn-outline-secondary">
-                                                <i class="bi bi-eye me-1"></i>Preview
+                                    <div class="mt-2 d-flex gap-2">
+                                        @if(!empty($block->content['previewable']))
+                                            @if(str_contains($mimeType, 'pdf'))
+                                                <a href="{{ $block->content['url'] }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                    <i class="bi bi-eye me-1"></i>Preview
+                                                </a>
+                                            @elseif(str_contains($mimeType, 'powerpoint') || str_contains($mimeType, 'presentation') || str_contains($mimeType, 'excel') || str_contains($mimeType, 'spreadsheet') || str_contains($mimeType, 'word') || str_contains($mimeType, 'document'))
+                                                <a href="https://view.officeapps.live.com/op/embed.aspx?src={{ urlencode($block->content['url']) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                    <i class="bi bi-eye me-1"></i>Preview
+                                                </a>
+                                            @endif
+                                        @endif
+                                        @if(!empty($block->content['downloadable']))
+                                            <a href="{{ $block->content['url'] }}" download class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-download me-1"></i>Download
                                             </a>
                                         @endif
                                     </div>

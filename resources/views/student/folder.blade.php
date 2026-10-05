@@ -196,18 +196,23 @@
                 @endif
                 @if($file->viewable)
                   @php
-                    $isGoogleViewable = in_array($file->type, ['PowerPoint', 'Word', 'Excel']);
-                    $isBrowserViewable = in_array($file->type, ['PDF', 'Image', 'Video', 'Audio']);
+                    $isOfficeViewable = in_array($file->type, ['PowerPoint', 'Word', 'Excel']);
+                    $isPdf = $file->type === 'PDF';
                   @endphp
 
-                  @if($isBrowserViewable)
-                    <a href="javascript:void(0)" onclick="openSecureViewer('{{ URL::temporarySignedRoute('file.download', now()->addMinutes(30), ['file' => $file->id]) }}', '{{ $file->type }}', '{{ $file->downloadable ? route('file.download', $file) : '' }}')"
+                  @if($isPdf)
+                    <a href="javascript:void(0)" onclick="openSecureViewer('{{ route('file.preview', $file) }}', 'PDF', '{{ $file->downloadable ? route('file.download', $file) : '' }}', '{{ addslashes($file->original_name) }}')"
                       class="text-info text-decoration-none">
                       <i class="bi bi-eye"></i> View
                     </a>
-                  @elseif($isGoogleViewable)
+                  @elseif($isOfficeViewable)
                     <a href="javascript:void(0)"
-                      onclick="openSecureViewer('https://docs.google.com/gview?url={{ urlencode($file->download_url) }}&embedded=true', 'google', '{{ $file->downloadable ? route('file.download', $file) : '' }}')"
+                      onclick="openSecureViewer('{{ $file->download_url }}', '{{ $file->type }}', '{{ $file->downloadable ? route('file.download', $file) : '' }}', '{{ addslashes($file->original_name) }}')"
+                      class="text-info text-decoration-none">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+                  @else
+                    <a href="javascript:void(0)" onclick="openSecureViewer('{{ route('file.preview', $file) }}', '{{ $file->type }}', '{{ $file->downloadable ? route('file.download', $file) : '' }}', '{{ addslashes($file->original_name) }}')"
                       class="text-info text-decoration-none">
                       <i class="bi bi-eye"></i> View
                     </a>
@@ -240,20 +245,30 @@
     <div class="modal-dialog modal-fullscreen">
       <div class="modal-content bg-dark">
         <div class="modal-header border-secondary py-2 d-flex align-items-center justify-content-between">
-          <h6 class="modal-title text-white mb-0"><i class="bi bi-shield-lock me-2"></i>Secure Viewer</h6>
+          <div class="d-flex align-items-center gap-2">
+            <h6 class="modal-title text-white mb-0"><i class="bi bi-shield-lock me-2 text-success"></i><span id="secureViewerTitle">Secure Viewer</span></h6>
+            <div id="engineSwitchGroup" class="btn-group btn-group-sm ms-3" style="display: none;">
+              <button type="button" class="btn btn-primary" id="btnViewerOffice" onclick="switchViewerEngine('office')">
+                <i class="bi bi-microsoft me-1"></i>Office Viewer (Fast)
+              </button>
+              <button type="button" class="btn btn-outline-light" id="btnViewerGoogle" onclick="switchViewerEngine('google')">
+                <i class="bi bi-google me-1"></i>Google Viewer
+              </button>
+            </div>
+          </div>
           <div class="d-flex align-items-center">
-            {{-- Non-intrusive Premium Header Download Button --}}
+            {{-- Download Button (strictly shown ONLY if downloadable is true) --}}
             <a id="secureViewerHeaderDownload" href="" class="btn btn-outline-light btn-sm me-3" style="display: none; border-radius: 6px;" download>
               <i class="bi bi-download me-1"></i> Download File
             </a>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
         </div>
-        <div class="modal-body p-0 position-relative" style="height: 100%; overflow: hidden; background: #1e293b;">
+        <div class="modal-body p-0 position-relative" style="height: 100%; overflow: hidden; background: #1e293b;" oncontextmenu="return false;">
           {{-- The Toolbar Blocker: Covers the top 55px of the iframe --}}
           <div id="toolbarBlocker"
             style="position: absolute; top: 0; left: 0; width: 100%; height: 55px; background: transparent; z-index: 1056; cursor: not-allowed;"
-            title="External tools disabled"></div>
+            title="Download tools disabled"></div>
 
           <iframe id="secureFrame" src="" style="width: 100%; height: 100%; border: none;" allowfullscreen></iframe>
         </div>
@@ -263,32 +278,39 @@
 
   @push('scripts')
     <script>
-      function openSecureViewer(url, type, downloadUrl = '') {
+      let currentDocRawUrl = '';
+      let currentDocType = '';
+
+      function openSecureViewer(url, type, downloadUrl = '', title = 'Secure Viewer') {
         const frame = document.getElementById('secureFrame');
         const blocker = document.getElementById('toolbarBlocker');
         const headerDownload = document.getElementById('secureViewerHeaderDownload');
+        const titleEl = document.getElementById('secureViewerTitle');
+        const engineGroup = document.getElementById('engineSwitchGroup');
 
-        // Set src to blank first to flush memory
         frame.src = 'about:blank';
+        if (titleEl) titleEl.textContent = title;
 
-        // Determine URL to load
-        let finalUrl = url;
+        currentDocRawUrl = url;
+        currentDocType = type;
 
-        // Add outer cache buster to bypass Google rate-limited cached 204 blank pages
-        if (type === 'google') {
-          finalUrl += '&cb=' + new Date().getTime();
-        }
+        const isOfficeDoc = ['PowerPoint', 'Word', 'Excel'].includes(type);
 
-        // Show blocker by default for Google/Office
-        blocker.style.display = (type === 'google' || type === 'PowerPoint' || type === 'Word' || type === 'Excel') ? 'block' : 'none';
-
-        // If PDF, hide toolbar via URL hash parameters
-        if (type === 'PDF') {
-          finalUrl += '#toolbar=0&navpanes=0&scrollbar=0&view=FitH';
+        if (isOfficeDoc) {
+          if (engineGroup) engineGroup.style.display = 'inline-flex';
+          setViewerEngineActive('office');
+          frame.src = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
           blocker.style.display = 'block';
+        } else if (type === 'PDF') {
+          if (engineGroup) engineGroup.style.display = 'none';
+          frame.src = url + '#toolbar=0&navpanes=0&scrollbar=0&view=FitH';
+          blocker.style.display = 'block';
+        } else {
+          if (engineGroup) engineGroup.style.display = 'none';
+          frame.src = url;
+          blocker.style.display = 'none';
         }
 
-        // Setup clean non-intrusive download button in header if available
         if (downloadUrl) {
           headerDownload.href = downloadUrl;
           headerDownload.style.display = 'inline-block';
@@ -296,12 +318,48 @@
           headerDownload.style.display = 'none';
         }
 
-        // Start loading
-        frame.src = finalUrl;
-
         const modal = new bootstrap.Modal(document.getElementById('secureViewerModal'));
         modal.show();
       }
+
+      function switchViewerEngine(engine) {
+        const frame = document.getElementById('secureFrame');
+        if (!frame || !currentDocRawUrl) return;
+
+        setViewerEngineActive(engine);
+        if (engine === 'office') {
+          frame.src = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(currentDocRawUrl)}`;
+        } else {
+          frame.src = `https://docs.google.com/gview?url=${encodeURIComponent(currentDocRawUrl)}&embedded=true&cb=${Date.now()}`;
+        }
+      }
+
+      function setViewerEngineActive(engine) {
+        const btnOffice = document.getElementById('btnViewerOffice');
+        const btnGoogle = document.getElementById('btnViewerGoogle');
+        if (engine === 'office') {
+          btnOffice?.classList.add('btn-primary');
+          btnOffice?.classList.remove('btn-outline-light');
+          btnGoogle?.classList.remove('btn-primary');
+          btnGoogle?.classList.add('btn-outline-light');
+        } else {
+          btnGoogle?.classList.add('btn-primary');
+          btnGoogle?.classList.remove('btn-outline-light');
+          btnOffice?.classList.remove('btn-primary');
+          btnOffice?.classList.add('btn-outline-light');
+        }
+      }
+
+      // Block Ctrl+S / Cmd+S / Ctrl+P inside the document
+      window.addEventListener('keydown', function(e) {
+        const modal = document.getElementById('secureViewerModal');
+        if (modal && modal.classList.contains('show')) {
+          if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'p' || e.key === 'S' || e.key === 'P')) {
+            e.preventDefault();
+            return false;
+          }
+        }
+      });
     </script>
   @endpush
 @endsection

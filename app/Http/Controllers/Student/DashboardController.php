@@ -1495,12 +1495,13 @@ class DashboardController extends Controller
      */
     public function downloadFile(\App\Models\CourseFile $file)
     {
-        // 1. Check if the request is a valid temporary signed request (used by Google preview iframe)
-        $hasValidSignature = request()->hasValidSignature();
+        // Enforce downloadable permission strictly
+        if (!$file->downloadable && Auth::user()?->role !== 'admin') {
+            abort(403, 'Downloading is disabled for this file.');
+        }
 
-        // 2. If it is NOT a signed request, enforce standard student permission checks
-        if (!$hasValidSignature) {
-            // Check if user is enrolled in the course
+        // Check if user is enrolled in the course (or staff)
+        if (Auth::user()?->role !== 'admin' && Auth::user()?->role !== 'teacher') {
             $enrollment = Enrollment::where('user_id', Auth::id())
                 ->where('course_id', $file->course_id)
                 ->first();
@@ -1509,18 +1510,14 @@ class DashboardController extends Controller
                 abort(403, 'You must be enrolled in this course to download files.');
             }
 
-            // Permission check
-            $hasAccess = false;
-
+            // Check student content permissions
             $hasCustomPermissions = StudentContentPermission::where('student_id', Auth::id())
                 ->where('course_id', $file->course_id)
                 ->exists();
 
-            if (!$hasCustomPermissions) {
-                $hasAccess = true;
-            } else {
+            if ($hasCustomPermissions) {
+                $hasAccess = false;
                 if ($file->folder_id) {
-                    // Check explicit folder permission
                     $hasAccess = StudentContentPermission::where([
                         'student_id' => Auth::id(),
                         'course_id' => $file->course_id,
@@ -1529,7 +1526,6 @@ class DashboardController extends Controller
                         'has_access' => true,
                     ])->exists();
 
-                    // Check if the parent of the folder is explicitly allowed
                     if (!$hasAccess) {
                         $folder = \App\Models\CourseFolder::find($file->folder_id);
                         if ($folder && $folder->parent_folder_id) {
@@ -1543,28 +1539,17 @@ class DashboardController extends Controller
                         }
                     }
                 } else {
-                    // Root files are accessible if enrolled
                     $hasAccess = true;
                 }
-            }
 
-            if (!$hasAccess) {
-                abort(403, 'Access denied for this file.');
-            }
-
-            // Check availability
-            if (!$file->downloadable) {
-                abort(403, 'Downloading is disabled for this file.');
+                if (!$hasAccess) {
+                    abort(403, 'Access denied for this file.');
+                }
             }
         }
 
-        // Determine file path
-        // Try Storage::disk('public') -> storage/app/public/
+        // Determine physical file path
         $pathPublic = storage_path('app/public/' . $file->path);
-
-        // Try custom 'uploads' disk -> storage/uploads/ OR base_path('storage/uploads')
-        // We assume 'uploads' disk root is at storage_path('../storage/uploads') or similar based on config.
-        // But simpler: just check the physical path we know Admin uses.
         $pathUploads = base_path('storage/uploads/' . $file->path);
 
         if (file_exists($pathPublic)) {
@@ -1573,7 +1558,6 @@ class DashboardController extends Controller
             return response()->download($pathUploads, $file->original_name ?? $file->filename);
         }
 
-        // Debug: Log info if not found
         \Log::warning('File download failed: File not found', [
             'file_id' => $file->id,
             'db_path' => $file->path,
@@ -1582,6 +1566,106 @@ class DashboardController extends Controller
         ]);
 
         abort(404, 'File not found on server.');
+    }
+
+    /**
+     * Preview a course file inline (e.g. for PDF or browser-renderable documents)
+     */
+    public function previewFile(Request $request, \App\Models\CourseFile $file)
+    {
+        $user = Auth::user();
+        $isStaff = in_array($user?->role, ['admin', 'teacher']);
+
+        if (!$isStaff) {
+            $enrollment = Enrollment::where('user_id', Auth::id())
+                ->where('course_id', $file->course_id)
+                ->first();
+
+            if (!$enrollment) {
+                abort(403, 'You must be enrolled in this course to view files.');
+            }
+
+            // Check student content permissions
+            $hasCustomPermissions = StudentContentPermission::where('student_id', Auth::id())
+                ->where('course_id', $file->course_id)
+                ->exists();
+
+            if ($hasCustomPermissions) {
+                $hasAccess = false;
+                if ($file->folder_id) {
+                    $hasAccess = StudentContentPermission::where([
+                        'student_id' => Auth::id(),
+                        'course_id' => $file->course_id,
+                        'content_type' => 'folder',
+                        'content_id' => $file->folder_id,
+                        'has_access' => true,
+                    ])->exists();
+
+                    if (!$hasAccess) {
+                        $folder = \App\Models\CourseFolder::find($file->folder_id);
+                        if ($folder && $folder->parent_folder_id) {
+                            $hasAccess = StudentContentPermission::where([
+                                'student_id' => Auth::id(),
+                                'course_id' => $file->course_id,
+                                'content_type' => 'folder',
+                                'content_id' => $folder->parent_folder_id,
+                                'has_access' => true,
+                            ])->exists();
+                        }
+                    }
+                } else {
+                    $hasAccess = true;
+                }
+
+                if (!$hasAccess) {
+                    abort(403, 'Access denied for this file.');
+                }
+            }
+
+            // Check viewable flag
+            if (!$file->viewable) {
+                abort(403, 'Viewing is disabled for this file.');
+            }
+        }
+
+        // Locate physical file
+        $pathPublic = storage_path('app/public/' . $file->path);
+        $pathUploads = base_path('storage/uploads/' . $file->path);
+        $filePath = file_exists($pathPublic) ? $pathPublic : (file_exists($pathUploads) ? $pathUploads : null);
+
+        if (!$filePath) {
+            abort(404, 'File not found on server.');
+        }
+
+        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        $extensionMimes = [
+            'pdf' => 'application/pdf',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls' => 'application/vnd.ms-excel',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'ppt' => 'application/vnd.ms-powerpoint',
+            'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'csv' => 'text/csv',
+            'txt' => 'text/plain',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            'mp3' => 'audio/mpeg',
+            'wav' => 'audio/wav',
+            'mp4' => 'video/mp4',
+        ];
+
+        $mimeType = $extensionMimes[$ext] ?? ($file->mime_type ?: 'application/octet-stream');
+
+        return response()->file($filePath, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . addslashes($file->original_name ?? $file->filename) . '"',
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
     }
 }
 

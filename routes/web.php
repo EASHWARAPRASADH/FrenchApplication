@@ -112,15 +112,30 @@ Route::get('/files/{path}', function ($path) {
 
     // Set appropriate content type
     $mimeTypes = [
+        'pdf' => 'application/pdf',
+        'doc' => 'application/msword',
+        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'xls' => 'application/vnd.ms-excel',
+        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'ppt' => 'application/vnd.ms-powerpoint',
+        'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'csv' => 'text/csv',
+        'txt' => 'text/plain',
+        'odt' => 'application/vnd.oasis.opendocument.text',
+        'ods' => 'application/vnd.oasis.opendocument.spreadsheet',
+        'odp' => 'application/vnd.oasis.opendocument.presentation',
         'jpg' => 'image/jpeg',
         'jpeg' => 'image/jpeg',
         'png' => 'image/png',
         'gif' => 'image/gif',
+        'webp' => 'image/webp',
+        'svg' => 'image/svg+xml',
         'mp3' => 'audio/mpeg',
         'mp4' => 'video/mp4',
         'wav' => 'audio/wav',
         'webm' => 'video/webm',
         'ogg' => 'audio/ogg',
+        'm4a' => 'audio/m4a',
     ];
 
     $contentType = $mimeTypes[$ext] ?? 'application/octet-stream';
@@ -128,7 +143,8 @@ Route::get('/files/{path}', function ($path) {
     // Return file with appropriate headers
     return response()->file($fullPath, [
         'Content-Type' => $contentType,
-        'Cache-Control' => 'public, max-age=31536000',
+        'Accept-Ranges' => 'bytes',
+        'Cache-Control' => 'public, max-age=86400',
     ]);
 })->where('path', '.*')->name('serve-storage');
 
@@ -174,8 +190,9 @@ Route::middleware(['auth', 'verified'])->prefix('student')->name('student.')->gr
     Route::post('/test/{test}/submit', [StudentDashboardController::class, 'submitTest'])->name('test.submit');
     Route::get('/test/{test}/results/{attempt}', [StudentDashboardController::class, 'showTestResults'])->name('test.results');
 
-    // File download
+    // File download and preview
     Route::get('/file/download/{file}', [StudentDashboardController::class, 'downloadFile'])->name('file.download');
+    Route::get('/file/preview/{file}', [StudentDashboardController::class, 'previewFile'])->name('file.preview');
 
     // Preview routes (accessible to admins and teachers)
     Route::get('/test/{test}/preview', [StudentDashboardController::class, 'previewTest'])->name('test.preview');
@@ -197,9 +214,10 @@ Route::middleware(['auth', 'verified'])->prefix('student')->name('student.')->gr
     Route::post('/attendance/store', [\App\Http\Controllers\Student\AttendanceController::class, 'store'])->name('attendance.store');
 });
 
-// File download route alias with exact 'file.download' name (outside the 'student.' name prefix group)
+// File routes aliases with exact 'file.*' names (outside the 'student.' name prefix group)
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/student/file/download/{file}', [StudentDashboardController::class, 'downloadFile'])->name('file.download');
+    Route::get('/file/download/{file}', [StudentDashboardController::class, 'downloadFile'])->name('file.download');
+    Route::get('/file/preview/{file}', [StudentDashboardController::class, 'previewFile'])->name('file.preview');
 });
 
 // Teacher Routes

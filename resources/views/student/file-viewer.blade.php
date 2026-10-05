@@ -71,34 +71,25 @@ document.addEventListener('DOMContentLoaded', function() {
     function showFileViewer() {
         // Check file type and display accordingly
         if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) {
-            // For PPTX files, try multiple viewers for better audio support
-            showPowerPointViewer();
+            showOfficeViewer('PowerPoint presentation', true);
+        } else if (mimeType.includes('excel') || mimeType.includes('spreadsheet') || mimeType.includes('csv')) {
+            showOfficeViewer('Excel spreadsheet', false);
+        } else if (mimeType.includes('word') || mimeType.includes('document')) {
+            showOfficeViewer('Word document', false);
         } else if (mimeType.includes('pdf')) {
-            // For PDF files, embed directly
+            // For PDF files, embed directly with disabled toolbar
             container.innerHTML = `
-                <div class="text-center p-3">
+                <div class="text-center p-3 position-relative">
+                    @if($accessLevel !== 'download')
+                    <div style="position: absolute; top: 1rem; left: 1rem; right: 1rem; height: 55px; background: transparent; z-index: 10; cursor: not-allowed;" title="Download tools disabled"></div>
+                    @endif
                     <p class="text-muted mb-3">
                         <i class="bi bi-info-circle me-2"></i>
                         Viewing PDF document
                     </p>
                     <iframe
-                        src="${fileUrl}"
-                        style="width: 100%; height: 600px; border: none; border-radius: 0.375rem;"
-                        allowfullscreen>
-                    </iframe>
-                </div>
-            `;
-        } else if (mimeType.includes('word') || mimeType.includes('document')) {
-            // For Word documents, use Google Docs Viewer
-            container.innerHTML = `
-                <div class="text-center p-3">
-                    <p class="text-muted mb-3">
-                        <i class="bi bi-info-circle me-2"></i>
-                        Viewing Word document
-                    </p>
-                    <iframe
-                        src="https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true"
-                        style="width: 100%; height: 600px; border: none; border-radius: 0.375rem;"
+                        src="${fileUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
+                        style="width: 100%; height: 750px; border: none; border-radius: 0.375rem;"
                         allowfullscreen>
                     </iframe>
                 </div>
@@ -111,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="bi bi-info-circle me-2"></i>
                         Viewing image
                     </p>
-                    <img src="${fileUrl}" class="img-fluid" style="max-height: 600px; border-radius: 0.375rem;" alt="${fileName}">
+                    <img src="${fileUrl}" class="img-fluid" style="max-height: 650px; border-radius: 0.375rem;" alt="${fileName}">
                 </div>
             `;
         } else {
@@ -123,20 +114,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     @if($accessLevel === 'download')
                         Please download the file to view its contents.
                     @else
-                        This file is view-only but cannot be previewed in the browser.
+                        This file is view-only but cannot be previewed directly in the browser.
                     @endif
                 </div>
             `;
         }
     }
 
-    function showPowerPointViewer() {
-        // Create viewer options for PowerPoint with audio support
+    function showOfficeViewer(docTypeName, isPresentation = false) {
         container.innerHTML = `
-            <div class="text-center p-3">
+            <div class="text-center p-3 position-relative" oncontextmenu="return false;">
+                @if($accessLevel !== 'download')
+                <div style="position: absolute; top: 1rem; left: 1rem; right: 1rem; height: 55px; background: transparent; z-index: 10; cursor: not-allowed;" title="Download tools disabled"></div>
+                @endif
                 <p class="text-muted mb-3">
                     <i class="bi bi-info-circle me-2"></i>
-                    Viewing PowerPoint presentation
+                    Viewing ${docTypeName}
                 </p>
 
                 <!-- Viewer Selection Tabs -->
@@ -144,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="office-tab" data-bs-toggle="tab" data-bs-target="#office-viewer"
                                 type="button" role="tab" aria-controls="office-viewer" aria-selected="true">
-                            <i class="bi bi-microsoft me-1"></i>Office Online
+                            <i class="bi bi-microsoft me-1"></i>Office Online (Fast)
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
@@ -159,70 +152,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="tab-content" id="viewerTabContent">
                     <!-- Office Online Viewer -->
                     <div class="tab-pane fade show active" id="office-viewer" role="tabpanel" aria-labelledby="office-tab">
-                        <div class="mb-3">
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle me-2"></i>
-                                <strong>Enhanced Viewer:</strong> This viewer supports audio playback and interactive features.
-                            </div>
-                        </div>
                         <iframe
                             src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}"
-                            style="width: 100%; height: 600px; border: none; border-radius: 0.375rem;"
+                            style="width: 100%; height: 750px; border: none; border-radius: 0.375rem;"
                             allowfullscreen>
                         </iframe>
+                        ${isPresentation ? `
                         <div class="mt-2">
                             <small class="text-success">
                                 <i class="bi bi-volume-up me-1"></i>
-                                Audio and animations are supported in this viewer.
+                                Audio, animations, and transitions are supported in Office Online viewer.
                             </small>
-                        </div>
+                        </div>` : ''}
                     </div>
 
                     <!-- Google Docs Viewer -->
                     <div class="tab-pane fade" id="google-viewer" role="tabpanel" aria-labelledby="google-tab">
-                        <div class="mb-3">
-                            <div class="alert alert-warning">
-                                <i class="bi bi-exclamation-triangle me-2"></i>
-                                <strong>Basic Viewer:</strong> Audio and animations may not work in this viewer.
-                            </div>
-                        </div>
                         <iframe
-                            src="https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true"
-                            style="width: 100%; height: 600px; border: none; border-radius: 0.375rem;"
+                            src="https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true&cb=${Date.now()}"
+                            style="width: 100%; height: 750px; border: none; border-radius: 0.375rem;"
                             allowfullscreen>
                         </iframe>
-                        <div class="mt-2">
-                            <small class="text-warning">
-                                <i class="bi bi-volume-mute me-1"></i>
-                                Switch to Office Online viewer above for audio support.
-                            </small>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Additional Info -->
-                <div class="mt-4">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="card border-success">
-                                <div class="card-body text-center py-2">
-                                    <small class="text-success">
-                                        <i class="bi bi-check-circle me-1"></i>
-                                        <strong>Office Online:</strong> Full audio support
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card border-warning">
-                                <div class="card-body text-center py-2">
-                                    <small class="text-warning">
-                                        <i class="bi bi-exclamation-triangle me-1"></i>
-                                        <strong>Google Viewer:</strong> Limited features
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -233,20 +183,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const officeIframe = document.querySelector('#office-viewer iframe');
             if (officeIframe) {
                 officeIframe.onerror = function() {
-                    // If Office Online fails, show a message and switch to Google viewer
-                    document.querySelector('#google-tab').click();
-                    const alertDiv = document.querySelector('#office-viewer .alert');
-                    if (alertDiv) {
-                        alertDiv.className = 'alert alert-danger';
-                        alertDiv.innerHTML = `
-                            <i class="bi bi-exclamation-triangle me-2"></i>
-                            <strong>Office Online Unavailable:</strong> Switched to Google Viewer. Audio may not work.
-                        `;
-                    }
+                    const googleTab = document.querySelector('#google-tab');
+                    if (googleTab) googleTab.click();
                 };
             }
-        }, 1000);
+        }, 1500);
     }
+
+    // Keyboard shortcut protection against saving/printing if not downloadable
+    window.addEventListener('keydown', function(e) {
+        @if($accessLevel !== 'download')
+        if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'p' || e.key === 'S' || e.key === 'P')) {
+            e.preventDefault();
+            return false;
+        }
+        @endif
+    });
 });
 </script>
 @endpush

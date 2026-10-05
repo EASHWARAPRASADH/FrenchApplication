@@ -456,6 +456,19 @@
                                     </div>
                                 </div>
                                 <div class="file-actions">
+                                    @php
+                                        $isViewable = str_contains($file->mime_type, 'powerpoint') || str_contains($file->mime_type, 'presentation') ||
+                                            str_contains($file->mime_type, 'pdf') || str_contains($file->mime_type, 'word') ||
+                                            str_contains($file->mime_type, 'document') || str_contains($file->mime_type, 'excel') ||
+                                            str_contains($file->mime_type, 'spreadsheet') || str_contains($file->mime_type, 'csv');
+                                    @endphp
+                                    @if($isViewable)
+                                        <button class="btn btn-sm btn-outline-primary"
+                                            onclick="viewFile('{{ $file->id }}', '{{ addslashes($file->original_name) }}', '{{ $file->download_url }}', '{{ $file->mime_type }}')"
+                                            title="View">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    @endif
                                     <a href="{{ $file->download_url }}" class="btn btn-sm btn-outline-info" title="Download"
                                         download>
                                         <i class="bi bi-download"></i>
@@ -1602,7 +1615,10 @@
                     contents.files.forEach(file => {
                         const isViewable = file.mime_type.includes('powerpoint') || file.mime_type.includes('presentation') ||
                             file.mime_type.includes('pdf') || file.mime_type.includes('word') ||
-                            file.mime_type.includes('document');
+                            file.mime_type.includes('document') || file.mime_type.includes('excel') ||
+                            file.mime_type.includes('spreadsheet') || file.mime_type.includes('csv') ||
+                            file.original_name.toLowerCase().endsWith('.xlsx') || file.original_name.toLowerCase().endsWith('.xls') ||
+                            file.original_name.toLowerCase().endsWith('.csv');
 
                         // Escape quotes for JS function calls
                         const safeFileName = file.original_name.replace(/'/g, "\\'");
@@ -1664,67 +1680,86 @@
                 const downloadBtn = document.getElementById('downloadFileBtn');
 
                 titleElement.textContent = fileName;
-                downloadBtn.href = downloadUrl;
+                if (downloadBtn) downloadBtn.href = downloadUrl;
 
                 // Clear previous content
                 container.innerHTML = '';
 
-                // Check file type and display accordingly
-                if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) {
-                    // For PPTX files, use Google Docs Viewer
+                const lowerName = fileName.toLowerCase();
+                const isPpt = mimeType.includes('powerpoint') || mimeType.includes('presentation') || lowerName.endsWith('.pptx') || lowerName.endsWith('.ppt');
+                const isExcel = mimeType.includes('excel') || mimeType.includes('spreadsheet') || mimeType.includes('csv') || lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls') || lowerName.endsWith('.csv');
+                const isWord = mimeType.includes('word') || mimeType.includes('document') || lowerName.endsWith('.docx') || lowerName.endsWith('.doc');
+                const isPdf = mimeType.includes('pdf') || lowerName.endsWith('.pdf');
+
+                if (isPpt || isExcel || isWord) {
+                    const docTypeName = isPpt ? 'PowerPoint Presentation' : (isExcel ? 'Excel Spreadsheet' : 'Word Document');
+                    const encodedUrl = encodeURIComponent(downloadUrl);
                     container.innerHTML = `
-                                                    <div class="text-center">
-                                                        <p class="text-muted mb-3">
-                                                            <i class="bi bi-info-circle me-2"></i>
-                                                            Viewing PowerPoint presentation
-                                                        </p>
-                                                        <iframe
-                                                            src="https://docs.google.com/gview?url=${encodeURIComponent(downloadUrl)}&embedded=true"
-                                                            style="width: 100%; height: 600px; border: none; border-radius: 0.375rem;"
-                                                            allowfullscreen>
-                                                        </iframe>
-                                                    </div>
-                                                `;
-                } else if (mimeType.includes('pdf')) {
-                    // For PDF files
+                        <div class="p-2">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-light text-dark border"><i class="bi bi-file-earmark me-1"></i>${docTypeName}</span>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-primary" id="btnOfficeViewer" onclick="switchViewerTab('office', '${encodedUrl}')">
+                                        <i class="bi bi-microsoft me-1"></i>Office Viewer (Fast)
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" id="btnGoogleViewer" onclick="switchViewerTab('google', '${encodedUrl}')">
+                                        <i class="bi bi-google me-1"></i>Google Viewer
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="viewerIframeWrapper" style="position: relative; min-height: 600px;">
+                                <iframe id="builderDocIframe"
+                                    src="https://view.officeapps.live.com/op/embed.aspx?src=${encodedUrl}"
+                                    style="width: 100%; height: 600px; border: 1px solid #e2e8f0; border-radius: 0.375rem;"
+                                    allowfullscreen>
+                                </iframe>
+                            </div>
+                        </div>
+                    `;
+                } else if (isPdf) {
                     container.innerHTML = `
-                                                    <div class="text-center">
-                                                        <p class="text-muted mb-3">
-                                                            <i class="bi bi-info-circle me-2"></i>
-                                                            Viewing PDF document
-                                                        </p>
-                                                        <iframe
-                                                            src="${downloadUrl}"
-                                                            style="width: 100%; height: 600px; border: none; border-radius: 0.375rem;"
-                                                            allowfullscreen>
-                                                        </iframe>
-                                                    </div>
-                                                `;
-                } else if (mimeType.includes('word') || mimeType.includes('document')) {
-                    // For Word documents
-                    container.innerHTML = `
-                                                    <div class="text-center">
-                                                        <p class="text-muted mb-3">
-                                                            <i class="bi bi-info-circle me-2"></i>
-                                                            Viewing Word document
-                                                        </p>
-                                                        <iframe
-                                                            src="https://docs.google.com/gview?url=${encodeURIComponent(downloadUrl)}&embedded=true"
-                                                            style="width: 100%; height: 600px; border: none; border-radius: 0.375rem;"
-                                                            allowfullscreen>
-                                                        </iframe>
-                                                    </div>
-                                                `;
+                        <div class="text-center p-2">
+                            <p class="text-muted mb-2">
+                                <i class="bi bi-file-earmark-pdf text-danger me-1"></i>Viewing PDF document
+                            </p>
+                            <iframe
+                                src="${downloadUrl}#toolbar=0"
+                                style="width: 100%; height: 600px; border: 1px solid #e2e8f0; border-radius: 0.375rem;"
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                    `;
                 } else {
                     container.innerHTML = `
-                                                    <div class="alert alert-info">
-                                                        <i class="bi bi-info-circle me-2"></i>
-                                                        Preview not available for this file type. Please download to view.
-                                                    </div>
-                                                `;
+                        <div class="alert alert-info m-3">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Preview not available for this file type. Please download to view.
+                        </div>
+                    `;
                 }
 
                 modal.show();
+            }
+
+            function switchViewerTab(engine, encodedUrl) {
+                const iframe = document.getElementById('builderDocIframe');
+                const btnOffice = document.getElementById('btnOfficeViewer');
+                const btnGoogle = document.getElementById('btnGoogleViewer');
+                if (!iframe) return;
+
+                if (engine === 'office') {
+                    iframe.src = `https://view.officeapps.live.com/op/embed.aspx?src=${encodedUrl}`;
+                    btnOffice?.classList.add('btn-primary');
+                    btnOffice?.classList.remove('btn-outline-primary', 'btn-outline-secondary');
+                    btnGoogle?.classList.remove('btn-primary');
+                    btnGoogle?.classList.add('btn-outline-secondary');
+                } else {
+                    iframe.src = `https://docs.google.com/gview?url=${encodedUrl}&embedded=true`;
+                    btnGoogle?.classList.add('btn-primary');
+                    btnGoogle?.classList.remove('btn-outline-primary', 'btn-outline-secondary');
+                    btnOffice?.classList.remove('btn-primary');
+                    btnOffice?.classList.add('btn-outline-secondary');
+                }
             }
 
             // Open file settings modal

@@ -130,10 +130,13 @@ class FileController extends Controller
 
             foreach ($files as $file) {
                 $originalName = $file->getClientOriginalName();
-                $filename = Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '-' . time() . '.' . $file->getClientOriginalExtension();
+                $extension = strtolower($file->getClientOriginalExtension());
+                $filename = Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '-' . time() . '.' . $extension;
 
                 // Store in course directory
                 $path = $file->storeAs("courses/{$courseId}/files", $filename, 'public');
+                $mimeType = $this->resolveMimeType($file, $extension);
+                $downloadable = $request->boolean('downloadable', false);
 
                 // Create CourseFile record
                 $courseFile = \App\Models\CourseFile::create([
@@ -143,9 +146,9 @@ class FileController extends Controller
                     'filename' => $filename,
                     'path' => $path,
                     'size' => $file->getSize(),
-                    'mime_type' => $file->getMimeType(),
+                    'mime_type' => $mimeType,
                     'uploaded_by' => auth()->id(),
-                    'downloadable' => true,
+                    'downloadable' => $downloadable,
                     'viewable' => true,
                 ]);
 
@@ -186,6 +189,95 @@ class FileController extends Controller
     public function upload(Request $request)
     {
         return $this->store($request);
+    }
+
+    /**
+     * Upload content file for lesson blocks or general course content
+     */
+    public function uploadContent(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|max:512000', // 500MB max
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $originalName = $file->getClientOriginalName();
+            $extension = strtolower($file->getClientOriginalExtension());
+            $mimeType = $this->resolveMimeType($file, $extension);
+
+            // Determine directory based on type
+            $directory = 'lesson-content/';
+            if (str_starts_with($mimeType, 'image/')) {
+                $directory .= 'images';
+            } elseif (str_starts_with($mimeType, 'audio/')) {
+                $directory .= 'audio';
+            } elseif (str_starts_with($mimeType, 'video/')) {
+                $directory .= 'videos';
+            } else {
+                $directory .= 'documents';
+            }
+
+            $filename = Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '-' . time() . '.' . $extension;
+            $path = $file->storeAs($directory, $filename, 'public');
+            $url = route('serve-storage', ['path' => $path]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'File uploaded successfully',
+                'url' => $url,
+                'path' => $path,
+                'filename' => $filename,
+                'original_name' => $originalName,
+                'mime_type' => $mimeType,
+                'size' => $file->getSize()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error uploading file: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Resolve and normalize accurate MIME types for uploaded files
+     */
+    private function resolveMimeType($file, string $extension): string
+    {
+        $extensionMimes = [
+            'pdf' => 'application/pdf',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls' => 'application/vnd.ms-excel',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'ppt' => 'application/vnd.ms-powerpoint',
+            'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'csv' => 'text/csv',
+            'txt' => 'text/plain',
+            'odt' => 'application/vnd.oasis.opendocument.text',
+            'ods' => 'application/vnd.oasis.opendocument.spreadsheet',
+            'odp' => 'application/vnd.oasis.opendocument.presentation',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            'svg' => 'image/svg+xml',
+            'mp3' => 'audio/mpeg',
+            'wav' => 'audio/wav',
+            'ogg' => 'audio/ogg',
+            'm4a' => 'audio/m4a',
+            'mp4' => 'video/mp4',
+            'webm' => 'video/webm',
+            'mov' => 'video/quicktime',
+        ];
+
+        if (isset($extensionMimes[$extension])) {
+            return $extensionMimes[$extension];
+        }
+
+        return $file->getMimeType() ?: 'application/octet-stream';
     }
 
     public function uploadChunk(Request $request)
