@@ -2,6 +2,10 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
+    <link rel="stylesheet" href="/css/header_enhanced.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -31,7 +35,7 @@
     <nav class="navbar navbar-expand-lg navbar-premium sticky-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="{{ route('home') }}">
-                <img src="/ts_logo.png" alt="TS Language Platform" class="navbar-logo me-3">
+                <img src="/logooo.png" alt="TS Language Platform" class="navbar-logo">
                 <span class="navbar-brand-text">TS Language Platform</span>
             </a>
 
@@ -46,13 +50,13 @@
                         <!-- Public navigation for non-authenticated users -->
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">
-                                <i class="bi bi-house me-1"></i>Home
+                                Home
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('courses.index') ? 'active' : '' }}"
                                 href="{{ route('courses.index') }}">
-                                <i class="bi bi-book me-1"></i>Courses
+                                Courses
                             </a>
                         </li>
                     @endguest
@@ -63,7 +67,7 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ request()->routeIs('student.dashboard') ? 'active' : '' }}"
                                     href="{{ route('student.dashboard') }}">
-                                    <i class="bi bi-house me-1"></i>Dashboard
+                                    Dashboard
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -81,7 +85,7 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ request()->routeIs('student.courses') ? 'active' : '' }}"
                                     href="{{ route('student.courses') }}">
-                                    <i class="bi bi-book me-1"></i>My Courses
+                                    My Courses
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -108,7 +112,7 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ request()->routeIs('admin.courses.*') ? 'active' : '' }}"
                                     href="{{ route('admin.courses.index') }}">
-                                    <i class="bi bi-book me-1"></i>Courses
+                                    Courses
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -134,13 +138,13 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ request()->routeIs('teacher.dashboard') ? 'active' : '' }}"
                                     href="{{ route('teacher.dashboard') }}">
-                                    <i class="bi bi-house me-1"></i>Dashboard
+                                    Dashboard
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {{ request()->routeIs('teacher.courses') ? 'active' : '' }}"
                                     href="{{ route('teacher.courses') }}">
-                                    <i class="bi bi-book me-1"></i>My Courses
+                                    My Courses
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -156,15 +160,14 @@
                 <ul class="navbar-nav">
                     @guest
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('login') }}">
-                                <i class="bi bi-box-arrow-in-right me-1"></i>
+                            <a class="nav-link nav-link-auth" href="{{ route('login') }}">
+                                
                                 Sign In
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="btn btn-warning ms-2" href="{{ route('register') }}">
                                 <i class="bi bi-person-plus me-1"></i>
-                                Sign Up
                             </a>
                         </li>
                     @else
@@ -398,7 +401,7 @@
         .navbar-premium {
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(79, 70, 229, 0.08);
+            border-bottom: 1px solid rgba(0, 102, 204, 0.08);
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
         }
 
@@ -425,11 +428,12 @@
         }
 
         .navbar-brand-text {
+            font-family: "Inter", sans-serif;
             font-weight: 700;
             letter-spacing: -0.01em;
             font-size: 1.125rem;
             white-space: nowrap;
-            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            background: linear-gradient(135deg, #0066cc 0%, #00c4ff 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -446,13 +450,13 @@
         }
 
         .navbar-premium .nav-link:hover {
-            color: #4F46E5 !important;
-            background: rgba(79, 70, 229, 0.06);
+            color: #0066cc !important;
+            background: rgba(0, 102, 204, 0.06);
         }
 
         .navbar-premium .nav-link.active {
-            color: #4F46E5 !important;
-            background: rgba(79, 70, 229, 0.1);
+            color: #0066cc !important;
+            background: rgba(0, 102, 204, 0.1);
             font-weight: 600;
         }
 
@@ -466,7 +470,7 @@
             width: 36px;
             height: 36px;
             border-radius: 10px;
-            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            background: linear-gradient(135deg, #0066cc 0%, #00c4ff 100%);
             color: white;
             display: flex;
             align-items: center;
@@ -483,7 +487,7 @@
         }
 
         .dropdown-toggle:hover {
-            background: rgba(79, 70, 229, 0.06);
+            background: rgba(0, 102, 204, 0.06);
         }
 
         .user-name {
@@ -517,8 +521,8 @@
         }
 
         .dropdown-item:hover {
-            background: rgba(79, 70, 229, 0.06);
-            color: #4F46E5;
+            background: rgba(0, 102, 204, 0.06);
+            color: #0066cc;
         }
 
         .dropdown-item i {
@@ -538,13 +542,13 @@
         }
 
         .navbar-toggler {
-            border: 2px solid rgba(79, 70, 229, 0.2) !important;
+            border: 2px solid rgba(0, 102, 204, 0.2) !important;
             border-radius: 10px;
             padding: 0.5rem;
         }
 
         .navbar-toggler:focus {
-            box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.15);
+            box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.15);
         }
 
         .navbar-toggler-icon {
@@ -553,6 +557,7 @@
 
         @media (max-width: 992px) {
             .navbar-brand-text {
+            font-family: "Inter", sans-serif;
                 display: none;
             }
 
@@ -574,7 +579,7 @@
         /* Modern Footer Styles */
         .footer-modern {
             background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
-            border-top: 1px solid rgba(79, 70, 229, 0.08);
+            border-top: 1px solid rgba(0, 102, 204, 0.08);
             padding: 4rem 0 2rem;
         }
 
@@ -594,7 +599,7 @@
             font-size: 1.25rem;
             color: #0F172A;
             margin: 0;
-            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            background: linear-gradient(135deg, #0066cc 0%, #00c4ff 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -616,17 +621,17 @@
             width: 40px;
             height: 40px;
             border-radius: 10px;
-            background: rgba(79, 70, 229, 0.06);
+            background: rgba(0, 102, 204, 0.06);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #4F46E5;
+            color: #0066cc;
             transition: all 0.2s ease;
             font-size: 1.125rem;
         }
 
         .social-link:hover {
-            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            background: linear-gradient(135deg, #0066cc 0%, #00c4ff 100%);
             color: white;
             transform: translateY(-2px);
         }
@@ -658,7 +663,7 @@
         }
 
         .footer-links a:hover {
-            color: #4F46E5;
+            color: #0066cc;
         }
 
         .footer-newsletter-text {
@@ -676,7 +681,7 @@
         .newsletter-input {
             flex: 1;
             padding: 0.75rem 1rem;
-            border: 1px solid rgba(79, 70, 229, 0.2);
+            border: 1px solid rgba(0, 102, 204, 0.2);
             border-radius: 10px;
             font-size: 0.9375rem;
             transition: all 0.2s ease;
@@ -684,14 +689,14 @@
 
         .newsletter-input:focus {
             outline: none;
-            border-color: #4F46E5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
         }
 
         .newsletter-btn {
             width: 44px;
             height: 44px;
-            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            background: linear-gradient(135deg, #0066cc 0%, #00c4ff 100%);
             border: none;
             border-radius: 10px;
             color: white;
@@ -704,13 +709,13 @@
 
         .newsletter-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.25);
+            box-shadow: 0 6px 20px rgba(0, 102, 204, 0.25);
         }
 
         .footer-bottom {
             margin-top: 3rem;
             padding-top: 2rem;
-            border-top: 1px solid rgba(79, 70, 229, 0.08);
+            border-top: 1px solid rgba(0, 102, 204, 0.08);
         }
 
         .footer-copyright,

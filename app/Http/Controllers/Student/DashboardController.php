@@ -334,9 +334,7 @@ class DashboardController extends Controller
         });
         $overallProgress = $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0;
         // Get course progress details
-        $courseProgress = $enrollments->filter(function ($enrollment) {
-            return $enrollment->course->lessons->count() > 0;
-        })->map(function ($enrollment) use ($user) {
+        $courseProgress = $enrollments->map(function ($enrollment) use ($user) {
             $course = $enrollment->course;
             $totalLessons = $course->lessons->count();
             $completedLessons = LessonProgress::where('student_id', $user->id)

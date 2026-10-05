@@ -226,7 +226,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::put('/courses/{course}', [\App\Http\Controllers\Admin\CourseController::class, 'update'])->name('courses.update');
     Route::delete('/courses/{course}', [\App\Http\Controllers\Admin\CourseController::class, 'destroy'])->name('courses.destroy');
     Route::get('/courses/{course}/builder', [\App\Http\Controllers\Admin\CourseController::class, 'builder'])->name('courses.builder');
-    Route::get('/courses/{course}/folder/{folder}/contents', [\App\Http\Controllers\Admin\CourseController::class, 'getFolderContents'])->name('courses.folder.contents');
+    Route::get('/courses/{course}/folder/{folder}/items', [\App\Http\Controllers\Admin\CourseController::class, 'getFolderContents'])->name('courses.folder.contents');
 
     // Course Builder AJAX Routes
     Route::post('/folders', [\App\Http\Controllers\Admin\FolderController::class, 'store'])->name('folders.store');
@@ -235,12 +235,15 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::put('/folders/{folder}', [\App\Http\Controllers\Admin\FolderController::class, 'update'])->name('folders.update');
     Route::get('/courses/{course}/folders/{folder}/move-options', [\App\Http\Controllers\Admin\FolderController::class, 'moveOptions'])->name('folders.move-options');
     Route::put('/folders/{folder}/move', [\App\Http\Controllers\Admin\FolderController::class, 'move'])->name('folders.move');
+    Route::post('/folders/{folder}/duplicate', [\App\Http\Controllers\Admin\FolderController::class, 'duplicate'])->name('folders.duplicate');
 
 
     Route::post('/lessons', [\App\Http\Controllers\Admin\LessonController::class, 'store'])->name('lessons.store');
     Route::get('/lessons/{lesson}/edit', [\App\Http\Controllers\Admin\LessonController::class, 'edit'])->name('lessons.edit');
     Route::put('/lessons/{lesson}', [\App\Http\Controllers\Admin\LessonController::class, 'update'])->name('lessons.update');
     Route::delete('/lessons/{lesson}', [\App\Http\Controllers\Admin\LessonController::class, 'destroy'])->name('lessons.destroy');
+    Route::put('/lessons/{lesson}/move', [\App\Http\Controllers\Admin\LessonController::class, 'move'])->name('lessons.move');
+    Route::post('/lessons/{lesson}/duplicate', [\App\Http\Controllers\Admin\LessonController::class, 'duplicate'])->name('lessons.duplicate');
 
     // Lesson Content Block Routes
     Route::post('/lessons/{lesson}/content-blocks', [\App\Http\Controllers\Admin\LessonController::class, 'addContentBlock'])->name('lessons.content-blocks.store');
@@ -251,6 +254,9 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('/tests/{test}/edit', [\App\Http\Controllers\Admin\TestController::class, 'edit'])->name('tests.edit');
     Route::put('/tests/{test}', [\App\Http\Controllers\Admin\TestController::class, 'update'])->name('tests.update');
     Route::delete('/tests/{test}', [\App\Http\Controllers\Admin\TestController::class, 'destroy'])->name('tests.destroy');
+    Route::get('/tests/{test}/move-options', [\App\Http\Controllers\Admin\TestController::class, 'moveOptions'])->name('tests.move-options');
+    Route::put('/tests/{test}/move', [\App\Http\Controllers\Admin\TestController::class, 'move'])->name('tests.move');
+    Route::post('/tests/{test}/duplicate', [\App\Http\Controllers\Admin\TestController::class, 'duplicate'])->name('tests.duplicate');
 
     // Test Question Routes
     Route::post('/tests/{test}/questions', [\App\Http\Controllers\Admin\TestController::class, 'addQuestion'])->name('tests.questions.store');

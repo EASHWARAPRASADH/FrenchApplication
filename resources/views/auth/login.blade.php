@@ -49,6 +49,7 @@
         }
 
         .login-title {
+            font-family: "Playfair Display", serif;
             font-weight: 800;
             color: #1e293b;
             letter-spacing: -0.025em;
@@ -57,6 +58,7 @@
         }
 
         .login-subtitle {
+            font-family: "Inter", sans-serif;
             color: #64748b;
             font-size: 1.15rem;
             line-height: 1.6;
@@ -93,7 +95,7 @@
         }
 
         .btn-login {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            background: linear-gradient(135deg, #0066cc 0%, #7c3aed 100%);
             border: none;
             border-radius: 14px;
             font-weight: 700;
@@ -134,14 +136,14 @@
         .quick-access-btn:hover {
             border-color: #e0e7ff;
             background: #eef2ff;
-            color: #4f46e5;
+            color: #0066cc;
             transform: translateY(-3px);
         }
 
         .quick-access-btn.active {
             border-color: #6366f1;
             background: #eef2ff;
-            color: #4f46e5;
+            color: #0066cc;
             box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.2);
         }
 
@@ -193,8 +195,8 @@
         }
 
         .custom-checkbox .form-check-input:checked {
-            background-color: #4f46e5;
-            border-color: #4f46e5;
+            background-color: #0066cc;
+            border-color: #0066cc;
         }
 
         .custom-checkbox .form-check-label {
@@ -216,7 +218,7 @@
                 <div class="col-md-7 col-lg-6 col-xl-5">
                     <div class="glass-card">
                         <div class="login-header">
-                            <img src="/ts_logo.png" alt="Logo" class="login-logo">
+                            <img src="/logooo.png" alt="Logo" class="login-logo">
                             <h1 class="login-title">Welcome Back!</h1>
                             <p class="login-subtitle">Sign in to access your comprehensive French learning dashboard.</p>
                         </div>

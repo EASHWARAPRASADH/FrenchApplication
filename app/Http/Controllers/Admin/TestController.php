@@ -622,4 +622,210 @@ class TestController extends Controller
         ]);
     }
 
+    /**
+     * Get move/duplicate options for a test (all courses and their folders)
+     */
+    public function moveOptions(Test $test): JsonResponse
+    {
+        $courses = \App\Models\Course::orderBy('title')->get(['id', 'title']);
+        $folders = \App\Models\CourseFolder::get(['id', 'name', 'course_id', 'parent_folder_id']);
+
+        // Build folder parent-name map for path calculation
+        $parentMap = [];
+        $nameMap = [];
+        foreach ($folders as $f) {
+            $parentMap[$f->id] = $f->parent_folder_id;
+            $nameMap[$f->id] = $f->name;
+        }
+
+        $courseOptions = [];
+        foreach ($courses as $c) {
+            $cFolders = $folders->where('course_id', $c->id);
+            $folderOptions = [];
+            
+            // Add Root option for course
+            $folderOptions[] = [
+                'id' => null,
+                'name' => 'Course Root',
+                'path' => 'Root'
+            ];
+
+            foreach ($cFolders as $f) {
+                // Calculate depth for indentation
+                $depth = 0;
+                $curr = $f->parent_folder_id;
+                while ($curr) {
+                    $depth++;
+                    $curr = $parentMap[$curr] ?? null;
+                }
+
+                $indent = str_repeat("\u{00A0}\u{00A0}\u{00A0}\u{00A0}", $depth);
+                $prefix = $depth > 0 ? "└─ 📁 " : "📁 ";
+
+                $folderOptions[] = [
+                    'id' => $f->id,
+                    'name' => $f->name,
+                    'path' => $this->buildPath($f->id, $parentMap, $nameMap),
+                    'display_name' => $indent . $prefix . $f->name,
+                ];
+            }
+
+            // Sort folders by path (except Root which stays first)
+            $rootOpt = array_shift($folderOptions);
+            usort($folderOptions, function ($a, $b) {
+                return strcmp($a['path'], $b['path']);
+            });
+            array_unshift($folderOptions, $rootOpt);
+
+            $courseOptions[] = [
+                'id' => $c->id,
+                'title' => $c->title,
+                'folders' => $folderOptions
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'test_title' => $test->title,
+            'current_course_id' => $test->course_id,
+            'current_folder_id' => $test->folder_id,
+            'courses' => $courseOptions
+        ]);
+    }
+
+    /**
+     * Helper: build path like "Parent / Child"
+     */
+    private function buildPath(int $id, array $parentMap, array $nameMap): string
+    {
+        $parts = [];
+        $current = $id;
+        while ($current) {
+            $parts[] = $nameMap[$current] ?? (string)$current;
+            $current = $parentMap[$current] ?? null;
+        }
+        return implode(' / ', array_reverse($parts));
+    }
+
+    /**
+     * Move a test to another course and/or folder
+     */
+    public function move(Request $request, Test $test): JsonResponse
+    {
+        $request->validate([
+            'destination_course_id' => 'required|exists:courses,id',
+            'destination_folder_id' => 'nullable|exists:course_folders,id',
+        ]);
+
+        $courseId = (int)$request->destination_course_id;
+        $folderId = $request->destination_folder_id ? (int)$request->destination_folder_id : null;
+
+        // Verify folder belongs to course if provided
+        if ($folderId) {
+            $folder = \App\Models\CourseFolder::findOrFail($folderId);
+            if ($folder->course_id !== $courseId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Selected folder does not belong to the target course.'
+                ], 400);
+            }
+        }
+
+        try {
+            $test->update([
+                'course_id' => $courseId,
+                'folder_id' => $folderId,
+                'order_index' => $this->getNextOrderIndex($courseId, $folderId)
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Test moved successfully',
+                'test' => $test
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error moving test: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Duplicate a test with all questions and options to another course and/or folder
+     */
+    public function duplicate(Request $request, Test $test): JsonResponse
+    {
+        $request->validate([
+            'destination_course_id' => 'required|exists:courses,id',
+            'destination_folder_id' => 'nullable|exists:course_folders,id',
+            'new_title' => 'nullable|string|max:255'
+        ]);
+
+        $courseId = (int)$request->destination_course_id;
+        $folderId = $request->destination_folder_id ? (int)$request->destination_folder_id : null;
+
+        // Verify folder belongs to course if provided
+        if ($folderId) {
+            $folder = \App\Models\CourseFolder::findOrFail($folderId);
+            if ($folder->course_id !== $courseId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Selected folder does not belong to the target course.'
+                ], 400);
+            }
+        }
+
+        \DB::beginTransaction();
+        try {
+            // Replicate test
+            $newTest = $test->replicate();
+            $newTest->course_id = $courseId;
+            $newTest->folder_id = $folderId;
+            $newTest->title = $request->new_title ?: ($test->title . ' (Copy)');
+            $newTest->order_index = $this->getNextOrderIndex($courseId, $folderId);
+            $newTest->status = 'draft'; // Always copy as draft
+            $newTest->save();
+
+            // Replicate questions
+            $questions = $test->questions()->orderBy('order')->get();
+            foreach ($questions as $q) {
+                $newQ = $q->replicate();
+                $newQ->test_id = $newTest->id;
+                $newQ->save();
+
+                // Replicate options
+                foreach ($q->options as $opt) {
+                    $newOpt = $opt->replicate();
+                    $newOpt->question_id = $newQ->id;
+                    $newOpt->save();
+                }
+
+                // Replicate drag & drop items
+                foreach ($q->dragDropItems as $dd) {
+                    $newDd = $dd->replicate();
+                    $newDd->question_id = $newQ->id;
+                    $newDd->save();
+                }
+            }
+
+            // Sync total questions
+            $newTest->update(['total_questions' => $newTest->questions()->count()]);
+
+            \DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Test duplicated successfully',
+                'test' => $newTest
+            ]);
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error duplicating test: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 }

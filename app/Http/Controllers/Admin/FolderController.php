@@ -179,18 +179,20 @@ class FolderController extends Controller
     }
 
     /**
-     * Move a folder under another folder (or to root)
+     * Move a folder under another folder (or to root) in any course
      */
     public function move(Request $request, CourseFolder $folder): JsonResponse
     {
-        $validated = $request->validate([
+        $request->validate([
+            'destination_course_id' => 'required|exists:courses,id',
             'destination_folder_id' => 'nullable|exists:course_folders,id',
         ]);
 
-        $destId = $validated['destination_folder_id'] ?? null;
+        $courseId = (int)$request->destination_course_id;
+        $destId = $request->destination_folder_id ? (int)$request->destination_folder_id : null;
 
-        // No-op if destination is the same as current parent
-        if (($folder->parent_folder_id ?? null) === ($destId ? (int)$destId : null)) {
+        // No-op if destination is the same as current location
+        if (($folder->parent_folder_id ?? null) === $destId && $folder->course_id === $courseId) {
             return response()->json([
                 'success' => true,
                 'message' => 'Folder already in selected location',
@@ -198,49 +200,197 @@ class FolderController extends Controller
         }
 
         // Cannot move into itself
-        if ($destId && (int)$destId === (int)$folder->id) {
+        if ($destId && $destId === (int)$folder->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot move a folder into itself.',
             ], 400);
         }
 
-        // Validate same course and not into a descendant
+        // Validate destination folder if provided
         if ($destId) {
             $dest = CourseFolder::findOrFail($destId);
-            if ($dest->course_id !== $folder->course_id) {
+            if ($dest->course_id !== $courseId) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Destination folder is in a different course.',
+                    'message' => 'Destination folder is in a different course than selected.',
                 ], 400);
             }
 
-            // Build children map for descendant check
-            $all = CourseFolder::where('course_id', $folder->course_id)
-                ->get(['id','parent_folder_id']);
-            $childrenMap = [];
-            foreach ($all as $f) {
-                $childrenMap[$f->parent_folder_id ?? 0][] = $f->id;
+            // If moving within the same course, check descendants
+            if ($folder->course_id === $courseId) {
+                // Build children map for descendant check
+                $all = CourseFolder::where('course_id', $folder->course_id)
+                    ->get(['id','parent_folder_id']);
+                $childrenMap = [];
+                foreach ($all as $f) {
+                    $childrenMap[$f->parent_folder_id ?? 0][] = $f->id;
+                }
+                $desc = $this->getDescendantIdsFor($folder->id, $childrenMap);
+                if (isset($desc[$destId])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cannot move a folder into one of its own subfolders.',
+                    ], 400);
+                }
             }
-            $desc = $this->getDescendantIdsFor($folder->id, $childrenMap);
-            if (isset($desc[(int)$destId])) {
+        }
+
+        \DB::beginTransaction();
+        try {
+            // Move and set order to the end among new siblings
+            $folder->parent_folder_id = $destId;
+            $folder->order_index = $this->getNextOrderIndex($courseId, $destId);
+
+            if ($folder->course_id !== $courseId) {
+                // Course changed, update this folder and all sub-elements recursively
+                $this->moveFolderToCourse($folder, $courseId);
+            } else {
+                $folder->save();
+            }
+
+            \DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Folder moved successfully',
+                'folder' => $folder,
+            ]);
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error moving folder: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Recursively update course_id of a folder, its lessons, tests, and subfolders
+     */
+    private function moveFolderToCourse(CourseFolder $folder, int $newCourseId)
+    {
+        $folder->course_id = $newCourseId;
+        $folder->save();
+
+        // Update all lessons in this folder
+        \App\Models\Lesson::where('folder_id', $folder->id)->update(['course_id' => $newCourseId]);
+
+        // Update all tests in this folder
+        \App\Models\Test::where('folder_id', $folder->id)->update(['course_id' => $newCourseId]);
+
+        // Recursively update subfolders
+        foreach ($folder->subfolders as $sub) {
+            $this->moveFolderToCourse($sub, $newCourseId);
+        }
+    }
+
+    /**
+     * Duplicate a folder with all lessons, tests, and subfolders recursively
+     */
+    public function duplicate(Request $request, CourseFolder $folder): JsonResponse
+    {
+        $request->validate([
+            'destination_course_id' => 'required|exists:courses,id',
+            'destination_folder_id' => 'nullable|exists:course_folders,id',
+            'new_name' => 'nullable|string|max:255'
+        ]);
+
+        $courseId = (int)$request->destination_course_id;
+        $folderId = $request->destination_folder_id ? (int)$request->destination_folder_id : null;
+
+        // Verify folder belongs to course if provided
+        if ($folderId) {
+            $destFolder = CourseFolder::findOrFail($folderId);
+            if ($destFolder->course_id !== $courseId) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Cannot move a folder into one of its own subfolders.',
+                    'message' => 'Selected folder does not belong to the target course.'
                 ], 400);
             }
         }
 
-        // Move and set order to the end among new siblings
-        $folder->parent_folder_id = $destId ? (int)$destId : null;
-        $folder->order_index = $this->getNextOrderIndex($folder->course_id, $folder->parent_folder_id);
-        $folder->save();
+        \DB::beginTransaction();
+        try {
+            $newFolder = $this->duplicateFolderRecursive($folder, $courseId, $folderId, $request->new_name);
+            \DB::commit();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Folder moved successfully',
-            'folder' => $folder,
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Folder duplicated successfully',
+                'folder' => $newFolder
+            ]);
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error duplicating folder: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Helper: recursively duplicate a folder and its contents
+     */
+    private function duplicateFolderRecursive(CourseFolder $folder, int $courseId, ?int $parentFolderId, ?string $newName = null): CourseFolder
+    {
+        $newFolder = $folder->replicate();
+        $newFolder->course_id = $courseId;
+        $newFolder->parent_folder_id = $parentFolderId;
+        $newFolder->name = $newName ?: ($folder->name . ' (Copy)');
+        $newFolder->order_index = $this->getNextOrderIndex($courseId, $parentFolderId);
+        $newFolder->save();
+
+        // Replicate all lessons
+        foreach ($folder->lessons as $lesson) {
+            $newLesson = $lesson->replicate();
+            $newLesson->course_id = $courseId;
+            $newLesson->folder_id = $newFolder->id;
+            $newLesson->status = 'draft';
+            $newLesson->order_index = \App\Models\Lesson::where('course_id', $courseId)->where('folder_id', $newFolder->id)->max('order_index') + 1;
+            $newLesson->save();
+
+            foreach ($lesson->contentBlocks as $cb) {
+                $newCb = $cb->replicate();
+                $newCb->lesson_id = $newLesson->id;
+                $newCb->save();
+            }
+        }
+
+        // Replicate all tests
+        foreach ($folder->tests as $test) {
+            $newTest = $test->replicate();
+            $newTest->course_id = $courseId;
+            $newTest->folder_id = $newFolder->id;
+            $newTest->status = 'draft';
+            $newTest->order_index = \App\Models\Test::where('course_id', $courseId)->where('folder_id', $newFolder->id)->max('order_index') + 1;
+            $newTest->save();
+
+            foreach ($test->questions as $q) {
+                $newQ = $q->replicate();
+                $newQ->test_id = $newTest->id;
+                $newQ->save();
+
+                foreach ($q->options as $opt) {
+                    $newOpt = $opt->replicate();
+                    $newOpt->question_id = $newQ->id;
+                    $newOpt->save();
+                }
+
+                foreach ($q->dragDropItems as $dd) {
+                    $newDd = $dd->replicate();
+                    $newDd->question_id = $newQ->id;
+                    $newDd->save();
+                }
+            }
+        }
+
+        // Replicate all subfolders recursively
+        foreach ($folder->subfolders as $sub) {
+            $this->duplicateFolderRecursive($sub, $courseId, $newFolder->id);
+        }
+
+        return $newFolder;
     }
 
     /**
@@ -278,8 +428,6 @@ class FolderController extends Controller
         $parts = array_reverse($parts);
         return 'Root / ' . implode(' / ', $parts);
     }
-
-
 
     /**
      * Get the next order index for a folder

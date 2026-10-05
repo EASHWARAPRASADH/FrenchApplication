@@ -459,7 +459,7 @@
     }
 
     function deleteTopic(topicId) {
-        if (!confirm('Are you sure you want to remove this topic?')) return;
+        if (!confirm('Area you sure you want to remove this topic?')) return;
 
         fetch('{{ route("student.status.topic.delete") }}', {
             method: 'DELETE',

@@ -4,15 +4,15 @@
         // Map Next.js links to Laravel routes
         $replacements = [
             'href="/"' => 'href="' . route('home') . '"',
-            'href="/about/"' => 'href="/about/"',
-            'href="/media-library/"' => 'href="/media-library/"',
-            'href="/certification/"' => 'href="/certification/"',
-            'href="/membership/"' => 'href="/membership/"',
-            'href="/contact/"' => 'href="/contact/"',
+            'href="/about/"' => 'href="' . route('home') . '#why"',
+            'href="/media-library/"' => 'href="' . route('home') . '#platform"',
+            'href="/certification/"' => 'href="' . route('home') . '#levels"',
+            'href="/membership/"' => 'href="' . route('register') . '"',
+            'href="/contact/"' => 'href="' . route('home') . '#footer"',
             'href="/auth/sign-in/"' => 'href="' . route('login') . '"',
             'href="/auth/register/"' => 'href="' . route('register') . '"',
-            'href="/courses/french/"' => 'href="/courses/french/"',
-            'href="/exams/orientation-test/"' => 'href="/exams/orientation-test/"',
+            'href="/courses/french/"' => 'href="' . route('courses.index') . '"',
+            'href="/exams/orientation-test/"' => 'href="' . route('home') . '#process"',
         ];
         $content = str_replace(array_keys($replacements), array_values($replacements), $content);
         echo $content;

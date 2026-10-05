@@ -341,8 +341,12 @@
                                 </div>
                                 <div class="file-actions">
                                     <button class="btn btn-sm btn-outline-secondary"
-                                        onclick="openMoveFolder('{{ $folder->id }}')" title="Move">
+                                        onclick="openMoveDuplicateModal('folder', '{{ $folder->id }}', false)" title="Move">
                                         <i class="bi bi-arrows-move"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary"
+                                        onclick="openMoveDuplicateModal('folder', '{{ $folder->id }}', true)" title="Duplicate">
+                                        <i class="bi bi-files"></i>
                                     </button>
                                     <button class="btn btn-sm btn-outline-secondary"
                                         onclick="editItem('folder', '{{ $folder->id }}')" title="Edit">
@@ -374,6 +378,14 @@
                                         <i class="bi bi-eye"></i>
                                     </button>
                                     <button class="btn btn-sm btn-outline-secondary"
+                                        onclick="openMoveDuplicateModal('lesson', '{{ $lesson->id }}', false)" title="Move">
+                                        <i class="bi bi-arrows-move"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary"
+                                        onclick="openMoveDuplicateModal('lesson', '{{ $lesson->id }}', true)" title="Duplicate">
+                                        <i class="bi bi-files"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary"
                                         onclick="editItem('lesson', '{{ $lesson->id }}')" title="Edit">
                                         <i class="bi bi-pencil"></i>
                                     </button>
@@ -401,6 +413,14 @@
                                     <button class="btn btn-sm btn-outline-info" onclick="previewItem('test', '{{ $test->id }}')"
                                         title="Preview">
                                         <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary"
+                                        onclick="openMoveDuplicateModal('test', '{{ $test->id }}', false)" title="Move">
+                                        <i class="bi bi-arrows-move"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary"
+                                        onclick="openMoveDuplicateModal('test', '{{ $test->id }}', true)" title="Duplicate">
+                                        <i class="bi bi-files"></i>
                                     </button>
                                     <button class="btn btn-sm btn-outline-secondary"
                                         onclick="editItem('test', '{{ $test->id }}')" title="Edit">
@@ -624,14 +644,14 @@
         </div>
     </div>
 
-    <!-- Move Folder Modal -->
-    <div class="modal fade" id="moveFolderModal" tabindex="-1">
+    <!-- Move / Duplicate Item Modal -->
+    <div class="modal fade" id="moveDuplicateItemModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">
+                    <h5 class="modal-title" id="moveDuplicateModalTitle">
                         <i class="bi bi-arrows-move me-2"></i>
-                        Move Folder
+                        Move/Duplicate Item
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
@@ -639,24 +659,37 @@
                     <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center" style="font-size: 0.9rem; border-radius: 8px; border: none; background: #e0f2fe; color: #0369a1;">
                         <i class="bi bi-info-circle-fill me-2" style="font-size: 1.1rem;"></i>
                         <div>
-                            Moving folder: <strong id="movingFolderNameDisplay" style="color: #0284c7;">...</strong>
+                            Target Item: <strong id="targetItemNameDisplay" style="color: #0284c7;">...</strong>
                         </div>
                     </div>
+                    
                     <div class="mb-3">
-                        <label for="moveDestinationSelect" class="form-label fw-semibold" style="font-size: 0.9rem;">Select Destination Folder</label>
-                        <select id="moveDestinationSelect" class="form-select" style="font-family: monospace, system-ui; font-size: 0.95rem;">
-                            <option value="">📁 Root (Top Level)</option>
-                            <!-- Options will be populated dynamically -->
+                        <label for="destCourseSelect" class="form-label fw-semibold" style="font-size: 0.9rem;">Destination Course</label>
+                        <select id="destCourseSelect" class="form-select" onchange="onDestCourseChanged()">
+                            <!-- Courses populated dynamically -->
                         </select>
                     </div>
-                    <div class="small text-muted" style="font-size: 0.82rem;">
+
+                    <div class="mb-3">
+                        <label for="destFolderSelect" class="form-label fw-semibold" style="font-size: 0.9rem;">Destination Folder</label>
+                        <select id="destFolderSelect" class="form-select" style="font-family: monospace, system-ui; font-size: 0.95rem;">
+                            <!-- Folders populated dynamically -->
+                        </select>
+                    </div>
+
+                    <div class="mb-3" id="newNameInputGroup" style="display: none;">
+                        <label for="newItemNameInput" class="form-label fw-semibold" style="font-size: 0.9rem;">New Name / Title</label>
+                        <input type="text" id="newItemNameInput" class="form-control" placeholder="Leave empty for auto-name">
+                    </div>
+
+                    <div class="small text-muted" id="moveDuplicateWarningText" style="font-size: 0.82rem;">
                         <i class="bi bi-exclamation-triangle me-1"></i>
-                        Note: You cannot move a folder into itself or into one of its subfolders.
+                        Note: Moving items to other courses will automatically shift all sub-elements.
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="submitMoveFolder()">Move</button>
+                    <button type="button" class="btn id-submit-btn btn-primary" onclick="submitMoveDuplicateItem()">Proceed</button>
                 </div>
             </div>
         </div>
@@ -748,72 +781,160 @@
             let selectedItems = [];
             let currentView = 'list';
 
-            // Move folder state
-            let moveFolderId = null;
+            // Universal Move / Duplicate State
+            let activeItemType = null;
+            let activeItemId = null;
+            let isDuplicationMode = false;
+            let courseOptionsData = null; // store course-folder structures fetched from server
 
-            // Open move folder modal and load options
-            function openMoveFolder(folderId) {
-                moveFolderId = folderId;
-                const select = document.getElementById('moveDestinationSelect');
-                // Reset options
-                select.innerHTML = '<option value="">📁 Root (Top Level)</option>';
-                fetch(`/admin/courses/${courseId}/folders/${folderId}/move-options`)
-                    .then(r => r.json())
-                    .then(data => {
-                        if (!data.success) throw new Error(data.message || 'Unable to load destinations');
-                        
-                        // Set folder name display
-                        document.getElementById('movingFolderNameDisplay').textContent = data.folder_name;
-
-                        (data.options || []).forEach(opt => {
-                            const o = document.createElement('option');
-                            o.value = opt.id;
-                            o.textContent = opt.display_name;
-                            select.appendChild(o);
-                        });
-
-                        // Pre-select current parent folder
-                        select.value = data.current_parent_id || '';
-
-                        const modal = new bootstrap.Modal(document.getElementById('moveFolderModal'));
-                        modal.show();
-                    })
-                    .catch(err => {
-                        console.error('Move options error:', err);
-                        alert('Unable to load move destinations');
-                    });
+            // Fetch course and folder options
+            async function fetchMoveDuplicateOptions(type, id) {
+                try {
+                    // Let's use test 529 or any test to load course metadata
+                    // If no test ID is active, fall back to 529 as a metadata provider
+                    let sampleTestId = type === 'test' ? id : 529;
+                    const r = await fetch(`/admin/tests/${sampleTestId}/move-options`);
+                    const data = await r.json();
+                    if (!data.success) throw new Error(data.message || 'Failed to load options');
+                    return data;
+                } catch (e) {
+                    console.error(e);
+                    alert('Error loading course structures');
+                }
             }
 
-            // Submit move request
-            function submitMoveFolder() {
-                if (!moveFolderId) return;
-                const select = document.getElementById('moveDestinationSelect');
-                const dest = select.value;
+            async function openMoveDuplicateModal(type, id, duplication = false) {
+                activeItemType = type;
+                activeItemId = id;
+                isDuplicationMode = duplication;
+
+                // Set targeting UI
+                document.getElementById('targetItemNameDisplay').textContent = `${type.toUpperCase()} #${id}`;
+                document.getElementById('newItemNameInput').value = '';
+
+                // Set Title & Button text
+                const titleEl = document.getElementById('moveDuplicateModalTitle');
+                const submitBtn = document.querySelector('#moveDuplicateItemModal .id-submit-btn');
+                const nameGroup = document.getElementById('newNameInputGroup');
+
+                if (isDuplicationMode) {
+                    titleEl.innerHTML = `<i class="bi bi-files me-2"></i>Duplicate ${type.toUpperCase()}`;
+                    submitBtn.textContent = 'Duplicate';
+                    nameGroup.style.display = 'block';
+                } else {
+                    titleEl.innerHTML = `<i class="bi bi-arrows-move me-2"></i>Move ${type.toUpperCase()}`;
+                    submitBtn.textContent = 'Move';
+                    nameGroup.style.display = 'none';
+                }
+
+                // Fetch metadata
+                const data = await fetchMoveDuplicateOptions(type, id);
+                if (!data) return;
+
+                courseOptionsData = data.courses;
+
+                // Populate Courses
+                const courseSelect = document.getElementById('destCourseSelect');
+                courseSelect.innerHTML = '';
+                courseOptionsData.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = c.title;
+                    courseSelect.appendChild(opt);
+                });
+
+                // Pre-select current course
+                let preselectedCourseId = (type === 'test' && data.current_course_id) ? data.current_course_id : courseId;
+                courseSelect.value = preselectedCourseId;
+
+                // Trigger folder population
+                onDestCourseChanged();
+
+                // Pre-select current folder if applicable
+                if (type === 'test' && data.current_folder_id) {
+                    document.getElementById('destFolderSelect').value = data.current_folder_id;
+                } else if (currentFolder !== 'root') {
+                    document.getElementById('destFolderSelect').value = currentFolder;
+                }
+
+                const modal = new bootstrap.Modal(document.getElementById('moveDuplicateItemModal'));
+                modal.show();
+            }
+
+            window.onDestCourseChanged = function() {
+                const courseIdSelected = parseInt(document.getElementById('destCourseSelect').value);
+                const folderSelect = document.getElementById('destFolderSelect');
+                folderSelect.innerHTML = '';
+
+                const courseData = courseOptionsData.find(c => c.id === courseIdSelected);
+                if (courseData && courseData.folders) {
+                    courseData.folders.forEach(f => {
+                        const opt = document.createElement('option');
+                        opt.value = f.id || '';
+                        opt.innerHTML = f.id ? f.display_name : '📁 Course Root (Top Level)';
+                        folderSelect.appendChild(opt);
+                    });
+                }
+            };
+
+            window.submitMoveDuplicateItem = function() {
+                const destCourseId = document.getElementById('destCourseSelect').value;
+                const destFolderId = document.getElementById('destFolderSelect').value;
+                const newTitle = document.getElementById('newItemNameInput').value.trim();
+
+                if (!destCourseId) {
+                    alert('Please select a destination course');
+                    return;
+                }
+
                 const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                fetch(`/admin/folders/${moveFolderId}/move`, {
-                    method: 'PUT',
+                let endpoint = `/admin/${activeItemType}s/${activeItemId}/${isDuplicationMode ? 'duplicate' : 'move'}`;
+
+                let payload = {
+                    destination_course_id: destCourseId,
+                    destination_folder_id: destFolderId || null
+                };
+
+                if (isDuplicationMode) {
+                    if (activeItemType === 'folder') {
+                        payload.new_name = newTitle;
+                    } else {
+                        payload.new_title = newTitle;
+                    }
+                }
+
+                const method = isDuplicationMode ? 'POST' : 'PUT';
+
+                const submitBtn = document.querySelector('#moveDuplicateItemModal .id-submit-btn');
+                submitBtn.disabled = true;
+                submitBtn.textContent = isDuplicationMode ? 'Duplicating...' : 'Moving...';
+
+                fetch(endpoint, {
+                    method: method,
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrf,
+                        'X-CSRF-TOKEN': csrf
                     },
-                    body: JSON.stringify({ destination_folder_id: dest || null })
+                    body: JSON.stringify(payload)
                 })
-                    .then(r => r.json())
-                    .then(res => {
-                        if (res.success) {
-                            // Close modal
-                            bootstrap.Modal.getInstance(document.getElementById('moveFolderModal')).hide();
-                            // Refresh current view
-                            loadFolderContent(currentFolder);
-                        } else {
-                            alert(res.message || 'Unable to move folder');
-                        }
-                    })
-                    .catch(err => {
-                        console.error('Move folder error:', err);
-                        alert('Network error moving folder');
-                    });
-            }
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('moveDuplicateItemModal')).hide();
+                        location.reload();
+                    } else {
+                        alert(res.message || 'Operation failed');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = isDuplicationMode ? 'Duplicate' : 'Move';
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Network error encountered');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = isDuplicationMode ? 'Duplicate' : 'Move';
+                });
+            };
 
 
             // Initialize the file manager
@@ -937,7 +1058,6 @@
             // Item Actions
             function openFolder(folderId) {
                 selectFolder(folderId);
-                loadFolderContent(folderId);
             }
 
             function openLesson(lessonId) {
@@ -1322,7 +1442,7 @@
                 contentArea.innerHTML = '<div class="text-center py-5"><i class="bi bi-hourglass-split"></i> Loading...</div>';
 
                 // Make AJAX request to get folder contents
-                fetch(`/admin/courses/{{ $course->id }}/folder/${folderId}/contents`)
+                fetch(`/admin/courses/{{ $course->id }}/folder/${folderId}/items`)
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
@@ -1392,8 +1512,11 @@
                                                             </small>
                                                         </div>
                                                         <div class="file-actions">
-                                                            <button class="btn btn-sm btn-outline-secondary" onclick="openMoveFolder('${folder.id}')" title="Move">
+                                                            <button class="btn btn-sm btn-outline-secondary" onclick="openMoveDuplicateModal('folder', '${folder.id}', false)" title="Move">
                                                                 <i class="bi bi-arrows-move"></i>
+                                                            </button>
+                                                            <button class="btn btn-sm btn-outline-secondary" onclick="openMoveDuplicateModal('folder', '${folder.id}', true)" title="Duplicate">
+                                                                <i class="bi bi-files"></i>
                                                             </button>
                                                             <button class="btn btn-sm btn-outline-primary" onclick="editFolder('${folder.id}')" title="Edit">
                                                                 <i class="bi bi-pencil"></i>
@@ -1403,7 +1526,7 @@
                                                             </button>
                                                         </div>
                                                     </div>
-                                                `;
+                                                 `;
                 });
 
                 // Render lessons
@@ -1423,6 +1546,12 @@
                                                             <button class="btn btn-sm btn-outline-info" onclick="previewItem('lesson', '${lesson.id}')" title="Preview">
                                                                 <i class="bi bi-eye"></i>
                                                             </button>
+                                                            <button class="btn btn-sm btn-outline-secondary" onclick="openMoveDuplicateModal('lesson', '${lesson.id}', false)" title="Move">
+                                                                <i class="bi bi-arrows-move"></i>
+                                                            </button>
+                                                            <button class="btn btn-sm btn-outline-secondary" onclick="openMoveDuplicateModal('lesson', '${lesson.id}', true)" title="Duplicate">
+                                                                <i class="bi bi-files"></i>
+                                                            </button>
                                                             <button class="btn btn-sm btn-outline-secondary" onclick="openLesson('${lesson.id}')" title="Edit">
                                                                 <i class="bi bi-pencil"></i>
                                                             </button>
@@ -1431,7 +1560,7 @@
                                                             </button>
                                                         </div>
                                                     </div>
-                                                `;
+                                                 `;
                 });
 
                 // Render tests
@@ -1451,6 +1580,12 @@
                                                             <button class="btn btn-sm btn-outline-info" onclick="previewItem('test', '${test.id}')" title="Preview">
                                                                 <i class="bi bi-eye"></i>
                                                             </button>
+                                                            <button class="btn btn-sm btn-outline-secondary" onclick="openMoveDuplicateModal('test', '${test.id}', false)" title="Move">
+                                                                <i class="bi bi-arrows-move"></i>
+                                                            </button>
+                                                            <button class="btn btn-sm btn-outline-secondary" onclick="openMoveDuplicateModal('test', '${test.id}', true)" title="Duplicate">
+                                                                <i class="bi bi-files"></i>
+                                                            </button>
                                                             <button class="btn btn-sm btn-outline-secondary" onclick="openTest('${test.id}')" title="Edit">
                                                                 <i class="bi bi-pencil"></i>
                                                             </button>
@@ -1459,7 +1594,7 @@
                                                             </button>
                                                         </div>
                                                     </div>
-                                                `;
+                                                 `;
                 });
 
                 // Render files

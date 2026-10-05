@@ -239,4 +239,107 @@ class LessonController extends Controller
 
         return ($maxOrder ?? 0) + 1;
     }
+
+    /**
+     * Move a lesson to another course and/or folder
+     */
+    public function move(Request $request, Lesson $lesson): JsonResponse
+    {
+        $request->validate([
+            'destination_course_id' => 'required|exists:courses,id',
+            'destination_folder_id' => 'nullable|exists:course_folders,id',
+        ]);
+
+        $courseId = (int)$request->destination_course_id;
+        $folderId = $request->destination_folder_id ? (int)$request->destination_folder_id : null;
+
+        // Verify folder belongs to course if provided
+        if ($folderId) {
+            $folder = \App\Models\CourseFolder::findOrFail($folderId);
+            if ($folder->course_id !== $courseId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Selected folder does not belong to the target course.'
+                ], 400);
+            }
+        }
+
+        try {
+            $lesson->update([
+                'course_id' => $courseId,
+                'folder_id' => $folderId,
+                'order_index' => $this->getNextOrderIndex($courseId, $folderId)
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Lesson moved successfully',
+                'lesson' => $lesson
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error moving lesson: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Duplicate a lesson with all content blocks to another course and/or folder
+     */
+    public function duplicate(Request $request, Lesson $lesson): JsonResponse
+    {
+        $request->validate([
+            'destination_course_id' => 'required|exists:courses,id',
+            'destination_folder_id' => 'nullable|exists:course_folders,id',
+            'new_title' => 'nullable|string|max:255'
+        ]);
+
+        $courseId = (int)$request->destination_course_id;
+        $folderId = $request->destination_folder_id ? (int)$request->destination_folder_id : null;
+
+        // Verify folder belongs to course if provided
+        if ($folderId) {
+            $folder = \App\Models\CourseFolder::findOrFail($folderId);
+            if ($folder->course_id !== $courseId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Selected folder does not belong to the target course.'
+                ], 400);
+            }
+        }
+
+        \DB::beginTransaction();
+        try {
+            // Replicate lesson
+            $newLesson = $lesson->replicate();
+            $newLesson->course_id = $courseId;
+            $newLesson->folder_id = $folderId;
+            $newLesson->title = $request->new_title ?: ($lesson->title . ' (Copy)');
+            $newLesson->order_index = $this->getNextOrderIndex($courseId, $folderId);
+            $newLesson->status = 'draft'; // Always copy as draft
+            $newLesson->save();
+
+            // Replicate content blocks
+            foreach ($lesson->contentBlocks as $cb) {
+                $newCb = $cb->replicate();
+                $newCb->lesson_id = $newLesson->id;
+                $newCb->save();
+            }
+
+            \DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Lesson duplicated successfully',
+                'lesson' => $newLesson
+            ]);
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error duplicating lesson: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
