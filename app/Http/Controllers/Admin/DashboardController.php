@@ -7,7 +7,6 @@ use App\Models\User;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\TestSubmission;
-use App\Models\AdminLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;

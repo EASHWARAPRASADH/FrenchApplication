@@ -41,3 +41,4 @@ vendor/
 research-visualization 2/node_modules/
 storage/framework/views/
 local_backups/
+backups/

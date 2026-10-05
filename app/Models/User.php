@@ -147,29 +147,12 @@ class User extends Authenticatable
     }
 
     /**
-     * Get user's achievements
-     */
-    public function achievements()
-    {
-        return $this->belongsToMany(Achievement::class, 'user_achievements')
-            ->withPivot('earned_at')
-            ->withTimestamps();
-    }
-
     /**
      * Get user's bookmarks
      */
     public function bookmarks()
     {
         return $this->hasMany(LessonBookmark::class);
-    }
-
-    /**
-     * Get user's admin logs (for admins)
-     */
-    public function adminLogs()
-    {
-        return $this->hasMany(AdminLog::class);
     }
 
     /**

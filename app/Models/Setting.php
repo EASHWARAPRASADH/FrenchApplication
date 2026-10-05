@@ -9,7 +9,9 @@ class Setting extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['key', 'value'];
+    protected $table = 'system_settings';
+
+    protected $fillable = ['key', 'value', 'type', 'description'];
 
     /**
      * Get a setting value by key
