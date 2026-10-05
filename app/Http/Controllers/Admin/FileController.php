@@ -131,6 +131,14 @@ class FileController extends Controller
             foreach ($files as $file) {
                 $originalName = $file->getClientOriginalName();
                 $extension = strtolower($file->getClientOriginalExtension());
+
+                if ($this->isDangerousExtension($extension)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Uploading .{$extension} files is strictly forbidden for security reasons."
+                    ], 422);
+                }
+
                 $filename = Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '-' . time() . '.' . $extension;
 
                 // Store in course directory
@@ -173,10 +181,15 @@ class FileController extends Controller
         list($disk, $relativePath) = $diskInfo;
 
         $file = $request->file('file');
+        $extension = strtolower($file->getClientOriginalExtension());
+        if ($this->isDangerousExtension($extension)) {
+            return redirect()->back()->with('error', "Uploading .{$extension} files is strictly forbidden for security reasons.");
+        }
+
         $filename = $file->getClientOriginalName();
 
         if ($disk->exists($relativePath . '/' . $filename)) {
-            $filename = pathinfo($filename, PATHINFO_FILENAME) . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $filename = pathinfo($filename, PATHINFO_FILENAME) . '_' . time() . '.' . $extension;
         }
 
         $disk->putFileAs($relativePath, $file, $filename);
@@ -204,6 +217,14 @@ class FileController extends Controller
             $file = $request->file('file');
             $originalName = $file->getClientOriginalName();
             $extension = strtolower($file->getClientOriginalExtension());
+
+            if ($this->isDangerousExtension($extension)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Uploading .{$extension} files is strictly forbidden for security reasons."
+                ], 422);
+            }
+
             $mimeType = $this->resolveMimeType($file, $extension);
 
             // Determine directory based on type
@@ -475,4 +496,18 @@ class FileController extends Controller
             'file' => $file
         ]);
     }
+
+    /**
+     * Check if a file extension is potentially dangerous or executable
+     */
+    private function isDangerousExtension(string $extension): bool
+    {
+        $blocked = [
+            'php', 'phtml', 'php3', 'php4', 'php5', 'php7', 'php8', 'phps', 'phar',
+            'sh', 'bash', 'exe', 'bat', 'cmd', 'cgi', 'pl', 'py', 'htaccess', 'htpasswd',
+            'js', 'vbs', 'jar', 'jsp', 'asp', 'aspx'
+        ];
+        return in_array(strtolower($extension), $blocked, true);
+    }
 }
+

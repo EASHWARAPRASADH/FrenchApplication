@@ -10,7 +10,13 @@ use Illuminate\Support\Facades\Route;
 
 // Public Routes
 Route::get('/', function () {
-    return file_get_contents(public_path('index-cn-tower.html'));
+    if (file_exists(public_path('index.html'))) {
+        return file_get_contents(public_path('index.html'));
+    }
+    if (file_exists(public_path('index-next.html'))) {
+        return file_get_contents(public_path('index-next.html'));
+    }
+    return view('home');
 })->name('home');
 
 // Fix nav links from Next.js landing page
@@ -221,7 +227,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // Teacher Routes
-Route::middleware(['auth', 'verified'])->prefix('teacher')->name('teacher.')->group(function () {
+Route::middleware(['auth', 'verified', 'teacher'])->prefix('teacher')->name('teacher.')->group(function () {
     Route::get('/dashboard', [TeacherDashboardController::class, 'index'])->name('dashboard');
     Route::get('/courses', [TeacherDashboardController::class, 'courses'])->name('courses');
     Route::get('/students', [TeacherDashboardController::class, 'students'])->name('students');
@@ -386,13 +392,31 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__ . '/auth.php';
 
-// Public route to serve uploaded files from storage
+// Public route to serve uploaded files from storage (secured against path traversal)
 Route::get('/storage/uploads/{type}/{filename}', function ($type, $filename) {
-    $path = base_path('storage/uploads/' . $type . '/' . $filename);
+    // Prevent directory traversal attacks
+    $cleanFilename = basename($filename);
+    if ($cleanFilename !== $filename || str_contains($filename, '..')) {
+        abort(403, 'Forbidden');
+    }
 
-    if (!file_exists($path)) {
-        abort(404);
+    $baseUploadDir = base_path('storage/uploads/' . $type);
+    if (!is_dir($baseUploadDir)) {
+        abort(404, 'Category directory not found');
+    }
+
+    $allowedDir = realpath($baseUploadDir);
+    $fullPath = $baseUploadDir . '/' . $cleanFilename;
+
+    if (!file_exists($fullPath)) {
+        abort(404, 'File not found');
+    }
+
+    $path = realpath($fullPath);
+    if (!$path || !$allowedDir || !str_starts_with($path, $allowedDir)) {
+        abort(403, 'Access denied');
     }
 
     return response()->file($path);
 })->where('type', 'audio|video|image|file')->name('storage.uploads');
+

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TS Language School: Canada Immigration Ready TCF Prep</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['"Playfair Display"', 'serif'],
+            sans: ['"Inter"', 'sans-serif'],
+          },
+          colors: {
+            ts: {
+              blue: '#0072B5',
+              cyan: '#00C4FF',
+              dark: '#003366',
+              light: '#F0F7FF',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
+    }
+
+    body {
+      background-color: #F0F7FF;
+      color: #003366;
+    }
+
+    @keyframes marquee {
+      0% {
+        transform: translateX(0);
+      }
+
+      100% {
+        transform: translateX(-50%);
+      }
+    }
+
+    .animate-marquee {
+      display: flex;
+      animation: marquee 30s linear infinite;
+      white-space: nowrap;
+    }
+
+    @media print {
+
+      nav,
+      footer,
+      button {
+        display: none !important;
+      }
+    }
+  </style>
+
+  <script type="module" crossorigin src="/assets/index-B14k8319.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CW5x5WOa.css">
+</head>
+
+<body>
+  <div id="root"></div>
+</body>
+
+</html>

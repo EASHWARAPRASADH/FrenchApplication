@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && tar -czf deploy.tar.gz dist/ && sshpass -p 'Eash@2005' scp -P 65002 -o StrictHostKeyChecking=no deploy.tar.gz u841409365@193.202.45.164:~/ && sshpass -p 'Eash@2005' ssh -p 65002 -o StrictHostKeyChecking=no u841409365@193.202.45.164 \"tar -xzf deploy.tar.gz -C domains/tslanguageschool.com/public_html --strip-components=1 && rm deploy.tar.gz\""
+    "deploy": "npm run build && tar -czf deploy.tar.gz dist/ && sshpass -p \"$SSH_PASS\" scp -P \"${SSH_PORT:-65002}\" -o StrictHostKeyChecking=no deploy.tar.gz \"${SSH_USER:-u841409365}@${SSH_HOST:-193.202.45.164}\":~/ && sshpass -p \"$SSH_PASS\" ssh -p \"${SSH_PORT:-65002}\" -o StrictHostKeyChecking=no \"${SSH_USER:-u841409365}@${SSH_HOST:-193.202.45.164}\" \"tar -xzf deploy.tar.gz -C domains/tslanguageschool.com/public_html --strip-components=1 && rm deploy.tar.gz\""
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

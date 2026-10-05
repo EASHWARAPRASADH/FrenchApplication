@@ -12,14 +12,14 @@ import logo from './logooo.png';
 import { FrenchQuiz } from './components/FrenchQuiz';
 
 // Asset imports
-import arun from './assets/arun.png';
-import akansha from './assets/akansha.jpg';
-import cyrille from './assets/cyrille.png';
-import yusurf from './assets/yusurf.jpg';
-import discoverFrance1 from './assets/discover-france-1.jpeg';
-import discoverFrance2 from './assets/discover-france-2.jpeg';
-import discoverFrance3 from './assets/discover-france-3.jpeg';
-import discoverFrance4 from './assets/discover-france-4.jpeg';
+import arun from './src/assets/arun.png';
+import akansha from './src/assets/akansha.jpg';
+import cyrille from './src/assets/cyrille.png';
+import yusurf from './src/assets/yusurf.jpg';
+import discoverFrance1 from './src/assets/discover-france-1.jpeg';
+import discoverFrance2 from './src/assets/discover-france-2.jpeg';
+import discoverFrance3 from './src/assets/discover-france-3.jpeg';
+import discoverFrance4 from './src/assets/discover-france-4.jpeg';
 
 const CourseCard = ({ cefr, clb, title, subtitle, duration, lessons, delay }: { cefr: string, clb: string, title: string, subtitle: string, duration: string, lessons: string, delay: string }) => (
   <div className="flex flex-col animate-fade-in-up p-8 bg-white rounded-xl border border-blue-50 shadow-sm hover:shadow-lg transition-all duration-500 hover:border-ts-blue/50 group" style={{ animationDelay: delay }}>
