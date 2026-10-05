@@ -100,18 +100,34 @@
         cursor: pointer;
     }
 
-    .date-cell {
-        background-color: #fcfcfc;
+    .date-cell, .sheet-table th:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 5;
+        background-color: #ffffff;
         color: #0f172a;
         font-weight: 600;
         padding: 16px;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.04);
+    }
+    .sheet-table th:first-child {
+        z-index: 6;
+        background-color: #f8fafc;
     }
 
-    .day-cell {
-        background-color: #fcfcfc;
+    .day-cell, .sheet-table th:nth-child(2) {
+        position: sticky;
+        left: 120px;
+        z-index: 5;
+        background-color: #ffffff;
         color: #64748b;
         font-weight: 500;
         padding: 16px;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.04);
+    }
+    .sheet-table th:nth-child(2) {
+        z-index: 6;
+        background-color: #f8fafc;
     }
 
     /* Status Indicators */
@@ -201,7 +217,7 @@
     }
 </style>
 
-<div class="container py-5">
+<div class="container py-4">
     <!-- Header -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 mb-md-5 gap-3">
         <div>

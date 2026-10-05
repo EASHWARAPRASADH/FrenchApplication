@@ -884,7 +884,7 @@
                     courseData.folders.forEach(f => {
                         const opt = document.createElement('option');
                         opt.value = f.id || '';
-                        opt.innerHTML = f.id ? f.display_name : '📁 Course Root (Top Level)';
+                        opt.innerHTML = f.id ? f.display_name : 'Course Root (Top Level)';
                         folderSelect.appendChild(opt);
                     });
                 }

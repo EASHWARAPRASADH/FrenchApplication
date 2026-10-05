@@ -413,7 +413,7 @@
                                 @endif
                                 <span class="option-text">{{ $option->option_text }}</span>
                                 @if($option->is_correct)
-                                    <span class="correct-indicator">✓ Correct</span>
+                                    <span class="correct-indicator"><i class="bi bi-check-lg me-1"></i>Correct</span>
                                 @endif
                             </li>
                         @endforeach

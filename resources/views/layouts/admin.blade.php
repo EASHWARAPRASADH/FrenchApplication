@@ -21,16 +21,17 @@
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
 
     <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ asset('css/app_design_system.css') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @stack('styles')
 
     <style>
         :root {
-            --primary-color: #4F46E5;
-            --primary-gradient: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            --primary-color: #0066CC;
+            --primary-gradient: linear-gradient(135deg, #0066CC 0%, #1E40AF 100%);
             --bg-color: #F8FAFC;
-            --sidebar-width: 280px;
+            --sidebar-width: 260px;
         }
 
         body {
@@ -45,7 +46,7 @@
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-            height: 70px;
+            height: 60px;
             z-index: 1030;
         }
 
@@ -60,16 +61,16 @@
         /* Sidebar Modern */
         .admin-sidebar {
             width: var(--sidebar-width);
-            height: calc(100vh - 70px);
+            height: calc(100vh - 60px);
             background: #FFFFFF;
             border-right: 1px solid #E2E8F0;
             position: fixed;
-            top: 70px;
+            top: 60px;
             left: 0;
             z-index: 1020;
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-y: auto;
-            padding: 1.5rem 1rem;
+            padding: 1.25rem 0.85rem;
         }
 
         .admin-sidebar.collapsed {
@@ -80,11 +81,11 @@
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: #94A3B8;
+            color: #64748B;
             font-weight: 600;
-            margin-bottom: 0.75rem;
-            margin-top: 1.5rem;
-            padding-left: 1rem;
+            margin-bottom: 0.5rem;
+            margin-top: 1.25rem;
+            padding-left: 0.75rem;
         }
 
         .sidebar-category:first-child {
@@ -95,8 +96,8 @@
             color: #64748B;
             font-weight: 500;
             font-size: 0.9375rem;
-            padding: 0.75rem 1rem;
-            border-radius: 12px;
+            padding: 0.65rem 0.85rem;
+            border-radius: 10px;
             margin-bottom: 0.25rem;
             transition: all 0.2s ease;
             display: flex;
@@ -105,13 +106,13 @@
 
         .nav-link:hover {
             color: var(--primary-color);
-            background-color: #EEF2FF;
+            background-color: #EBF5FF;
         }
 
         .nav-link.active {
             background: var(--primary-gradient);
             color: white;
-            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(0, 102, 204, 0.2);
         }
 
         .nav-link i {
@@ -124,10 +125,10 @@
         /* Content Area */
         .admin-content {
             margin-left: var(--sidebar-width);
-            margin-top: 70px;
-            padding: 2rem;
+            margin-top: 60px;
+            padding: 1.25rem;
             transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            min-height: calc(100vh - 70px);
+            min-height: calc(100vh - 60px);
         }
 
         .admin-content.expanded {

@@ -24,12 +24,14 @@
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
 
     <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ asset('css/app_design_system.css') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @stack('styles')
 </head>
 
 <body>
+    @if(empty($hideNavAndFooter) && !View::hasSection('hideNavAndFooter'))
     <!-- Navigation - Modern Professional Design -->
     <nav class="navbar navbar-expand-lg navbar-premium sticky-top">
         <div class="container">
@@ -303,6 +305,7 @@
             </div>
         </div>
     </nav>
+    @endif
 
     <!-- Main Content -->
     <main>
@@ -324,6 +327,7 @@
         <div id="flash-messages"></div>
     </main>
 
+    @if(empty($hideNavAndFooter) && !View::hasSection('hideNavAndFooter'))
     <!-- Footer - Modern Professional Design -->
     <footer class="footer-modern mt-5">
         <div class="container">
@@ -386,6 +390,7 @@
             </div>
         </div>
     </footer>
+    @endif
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

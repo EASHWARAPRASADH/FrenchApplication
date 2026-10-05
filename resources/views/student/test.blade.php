@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', $test->title . ' - TS Language Platform')
+@section('hideNavAndFooter', 'true')
 
 @section('content')
     <style>
@@ -10,65 +11,67 @@
         }
 
         .test-header {
-            background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+            background: linear-gradient(135deg, var(--brand-primary, #0066CC) 0%, var(--brand-primary-dark, #0052A3) 100%);
             color: white;
-            padding: 2.5rem 0;
-            border-radius: 0 0 20px 20px;
-            margin-bottom: 2.5rem;
-            box-shadow: 0 4px 16px rgba(79, 70, 229, 0.15);
+            padding: 1.25rem 0;
+            border-radius: 0 0 16px 16px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 16px rgba(0, 102, 204, 0.15);
         }
 
         .test-container {
             display: grid;
             grid-template-columns: 1fr 280px;
-            gap: 2rem;
+            gap: 1.5rem;
             min-height: calc(100vh - 200px);
+            padding-bottom: 85px;
         }
 
         .test-content {
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            padding: 2rem;
+            border-radius: 14px;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            padding: 1.5rem;
             height: fit-content;
         }
 
         .question-card {
-            background: #fefefe;
-            border: 1px solid #f1f5f9;
+            background: #ffffff;
+            border: 1px solid #E2E8F0;
             border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
         }
 
         .question-header {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.875rem;
+            border-bottom: 1px solid #E2E8F0;
         }
 
         .question-number {
-            background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+            background: linear-gradient(135deg, var(--brand-primary, #0066CC) 0%, var(--brand-primary-dark, #0052A3) 100%);
             color: white;
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 1rem;
         }
 
         .question-type {
-            background: rgba(79, 70, 229, 0.1);
-            color: #4F46E5;
-            padding: 0.375rem 1rem;
+            background: rgba(0, 102, 204, 0.08);
+            color: var(--brand-primary, #0066CC);
+            padding: 0.35rem 0.85rem;
             border-radius: 20px;
-            font-size: 0.8125rem;
+            font-size: 0.8rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.02em;
@@ -119,32 +122,37 @@
         }
 
         .option-item {
-            margin-bottom: 1rem;
-            padding: 1rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            padding: 0.875rem 1.125rem;
+            border: 1.5px solid #E2E8F0;
+            border-radius: 10px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            background: white;
+            transition: all 0.2s ease;
+            background: #ffffff;
             display: flex;
             align-items: center;
+            user-select: none;
         }
 
         .option-item:hover {
-            border-color: #f59e0b;
-            background: #fffbeb;
+            border-color: var(--brand-primary, #0066CC);
+            background: #F0F7FF;
         }
 
         .option-item.selected {
-            border-color: #f59e0b;
-            background: #f59e0b;
-            color: white;
+            border-color: var(--brand-primary, #0066CC);
+            background: #EBF5FF;
+            color: #0F172A;
+            box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+            font-weight: 600;
         }
 
         .option-radio {
-            margin-right: 1rem;
-            width: 20px;
-            height: 20px;
+            margin-right: 0.875rem;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--brand-primary, #0066CC);
+            cursor: pointer;
         }
 
         .option-text {
@@ -156,8 +164,8 @@
             display: inline-block;
             min-width: 100px;
             padding: 0.5rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 4px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
             margin: 0 0.25rem;
             text-align: center;
             font-weight: 500;
@@ -165,86 +173,106 @@
 
         .fill-blanks-input:focus {
             outline: none;
-            border-color: #f59e0b;
-            background: #fffbeb;
+            border-color: var(--brand-primary, #0066CC);
+            background: #f0f7ff;
         }
 
         .test-sidebar {
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            padding: 1.5rem;
+            border-radius: 14px;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            padding: 1.25rem;
             height: fit-content;
             position: sticky;
-            top: 2rem;
+            top: 1.25rem;
         }
 
         .timer-display {
             text-align: center;
-            background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
-            padding: 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 2rem;
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.25rem;
+            border: 1px solid #FCD34D;
         }
 
         .timer-icon {
-            font-size: 2rem;
-            color: #d97706;
-            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+            color: #D97706;
+            margin-bottom: 0.25rem;
         }
 
         .timer-text {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #92400e;
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #92400E;
+            font-variant-numeric: tabular-nums;
         }
 
         .timer-label {
-            font-size: 0.9rem;
-            color: #a16207;
-            margin-top: 0.25rem;
+            font-size: 0.8rem;
+            color: #A16207;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-top: 0.15rem;
+            font-weight: 600;
         }
 
         .question-navigator {
-            margin-bottom: 2rem;
+            margin-bottom: 1.25rem;
         }
 
         .nav-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
 
         .nav-question {
-            width: 40px;
-            height: 40px;
-            border: 2px solid #e5e7eb;
+            width: 38px;
+            height: 38px;
+            border: 1.5px solid #E2E8F0;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
             background: white;
         }
 
         .nav-question:hover {
-            border-color: #4F46E5;
-            background: rgba(79, 70, 229, 0.06);
+            border-color: var(--brand-primary, #0066CC);
+            background: rgba(0, 102, 204, 0.06);
         }
 
         .nav-question.current {
-            border-color: #4F46E5;
-            background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+            border-color: var(--brand-primary, #0066CC);
+            background: linear-gradient(135deg, var(--brand-primary, #0066CC) 0%, var(--brand-primary-dark, #0052A3) 100%);
             color: white;
-            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.25);
         }
 
         .nav-question.answered {
-            border-color: #10b981;
-            background: #10b981;
+            border-color: #10B981;
+            background: #10B981;
             color: white;
+        }
+
+        /* Sticky bottom action bar */
+        .test-bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1030;
+            background: #ffffff;
+            box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+            border-top: 1px solid #E2E8F0;
+            padding: 0.75rem 1.5rem;
         }
 
         .test-info {
@@ -457,36 +485,38 @@
         }
 
         .instructions-header {
-            background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
-            \n color: white;
+            background: linear-gradient(135deg, var(--brand-primary, #0066CC) 0%, var(--brand-primary-dark, #0052A3) 100%);
+            color: white;
             padding: 2rem;
             border-radius: 20px 20px 0 0;
             text-align: center;
         }
 
         .instructions-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
-            border-radius: 20px;
+            width: 72px;
+            height: 72px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 1.25rem;
-            font-size: 2.5rem;
-            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.2);
+            font-size: 2rem;
+            color: #ffffff;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
         }
 
         .instructions-title {
             font-size: 1.875rem;
             font-weight: 700;
             margin-bottom: 0.625rem;
-            color: #0F172A;
+            color: #ffffff;
             letter-spacing: -0.02em;
         }
 
         .instructions-subtitle {
-            color: #64748B;
+            color: rgba(255, 255, 255, 0.85);
             font-size: 1.0625rem;
             font-weight: 500;
         }
@@ -507,35 +537,34 @@
             padding: 1.5rem 1.25rem;
             border-radius: 16px;
             text-align: center;
-            border: 1px solid rgba(79, 70, 229, 0.08);
+            border: 1px solid rgba(0, 102, 204, 0.1);
             transition: all 0.3s ease;
         }
 
         .detail-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.1);
-            border-color: rgba(79, 70, 229, 0.15);
+            box-shadow: 0 8px 20px rgba(0, 102, 204, 0.1);
+            border-color: rgba(0, 102, 204, 0.2);
         }
 
         .detail-icon {
-            font-size: 2rem;
-            margin-bottom: 0.75rem;
-            display: block;
-            filter: grayscale(0.1);
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 36px;
         }
 
         .detail-value {
-            font-size: 1.75rem;
+            font-size: 1.625rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 0.375rem;
+            color: var(--brand-primary, #0066CC);
+            margin-bottom: 0.25rem;
         }
 
         .detail-label {
-            font-size: 0.9375rem;
+            font-size: 0.875rem;
             color: #64748B;
             font-weight: 600;
             text-transform: uppercase;
@@ -611,17 +640,17 @@
         }
 
         .btn-start-test {
-            background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+            background: linear-gradient(135deg, var(--brand-primary, #0066CC) 0%, var(--brand-primary-dark, #0052A3) 100%);
             color: white;
             width: 100%;
             padding: 1.125rem;
             border: none;
-            border-radius: 14px;
+            border-radius: 12px;
             font-size: 1.0625rem;
             font-weight: 600;
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             cursor: pointer;
-            box-shadow: 0 4px 16px rgba(79, 70, 229, 0.2);
+            box-shadow: 0 4px 16px rgba(0, 102, 204, 0.25);
         }
 
         .btn-start-test:hover {
@@ -651,7 +680,7 @@
         <div class="instructions-content">
             <div class="instructions-header">
                 <div class="instructions-icon">
-                    📝
+                    <i class="bi bi-file-earmark-text text-white"></i>
                 </div>
                 <h2 class="instructions-title">{{ $test->title }}</h2>
                 <p class="instructions-subtitle">Please read the instructions carefully before starting</p>
@@ -660,31 +689,31 @@
             <div class="instructions-body">
                 <div class="test-details">
                     <div class="detail-card">
-                        <div class="detail-icon">📊</div>
+                        <div class="detail-icon"><i class="bi bi-ui-checks text-primary"></i></div>
                         <div class="detail-value">{{ $totalQuestions }}</div>
                         <div class="detail-label">Questions</div>
                     </div>
                     @if($test->time_limit)
                         <div class="detail-card">
-                            <div class="detail-icon">⏱️</div>
+                            <div class="detail-icon"><i class="bi bi-stopwatch text-primary"></i></div>
                             <div class="detail-value">{{ $test->time_limit }}</div>
                             <div class="detail-label">Minutes</div>
                         </div>
                     @else
                         <div class="detail-card">
-                            <div class="detail-icon">♾️</div>
+                            <div class="detail-icon"><i class="bi bi-infinity text-primary"></i></div>
                             <div class="detail-value">Unlimited</div>
                             <div class="detail-label">Duration</div>
                         </div>
                     @endif
                     <div class="detail-card">
-                        <div class="detail-icon">✅</div>
+                        <div class="detail-icon"><i class="bi bi-check2-circle text-success"></i></div>
                         <div class="detail-value">{{ $test->passing_score }}%</div>
                         <div class="detail-label">Passing Score</div>
                     </div>
                     <div class="detail-card">
-                        <div class="detail-icon">🔄</div>
-                        <div class="detail-value">{{ $test->max_attempts ?? '∞' }}</div>
+                        <div class="detail-icon"><i class="bi bi-arrow-repeat text-primary"></i></div>
+                        <div class="detail-value">{{ $test->max_attempts ?? 'Unlimited' }}</div>
                         <div class="detail-label">Attempts</div>
                     </div>
                 </div>
@@ -1048,6 +1077,28 @@
         @endif
     </div>
 
+    <!-- Sticky Bottom Navigation Bar for Focus Mode -->
+    <div class="test-bottom-bar shadow-sm">
+        <div class="container d-flex align-items-center justify-content-between p-0">
+            <button class="btn btn-outline-secondary px-3 py-2 fw-medium" id="bottomPrevBtn" onclick="previousQuestion()" disabled>
+                <i class="bi bi-arrow-left me-1"></i>Previous
+            </button>
+            <div class="text-center">
+                <span class="badge bg-light text-dark border px-3 py-2 fs-6 fw-semibold">
+                    Question <span id="currentQuestionNum">1</span> of {{ $totalQuestions }}
+                </span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-primary px-3 py-2 fw-medium" id="bottomNextBtn" onclick="nextQuestion()">
+                    Next<i class="bi bi-arrow-right ms-1"></i>
+                </button>
+                <button class="btn btn-success px-3 py-2 fw-medium" onclick="submitTest()">
+                    <i class="bi bi-check2-circle me-1"></i>Submit Test
+                </button>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
         <script>
             let currentQuestion = 0;
@@ -1125,8 +1176,15 @@
             }
 
             function updateNavigationButtons() {
-                document.querySelector('.btn-previous').disabled = currentQuestion === 0;
-                document.querySelector('.btn-next').disabled = currentQuestion === totalQuestions - 1;
+                const prevBtns = document.querySelectorAll('.btn-previous, #bottomPrevBtn');
+                const nextBtns = document.querySelectorAll('.btn-next, #bottomNextBtn');
+                prevBtns.forEach(btn => btn.disabled = currentQuestion === 0);
+                nextBtns.forEach(btn => btn.disabled = currentQuestion === totalQuestions - 1);
+
+                const currentNumEl = document.getElementById('currentQuestionNum');
+                if (currentNumEl) currentNumEl.textContent = currentQuestion + 1;
+                const topCounter = document.getElementById('topQuestionCounter');
+                if (topCounter) topCounter.textContent = `${currentQuestion + 1} / ${totalQuestions}`;
             }
 
             // Answer selection

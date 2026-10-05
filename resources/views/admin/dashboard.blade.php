@@ -29,46 +29,41 @@
         }
 
         .bg-gradient-header {
-            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            background: linear-gradient(135deg, #0066CC 0%, #1E40AF 100%);
             border-radius: 1rem;
             color: white;
         }
     </style>
 
     <!-- Welcome Header -->
-    <div class="bg-gradient-header p-4 mb-4 shadow-sm position-relative overflow-hidden">
+    <div class="bg-gradient-header p-3 px-4 mb-3 shadow-sm position-relative overflow-hidden">
         <div class="row align-items-center position-relative z-1">
             <div class="col-md-8">
                 <h2 class="fw-bold mb-1">
-                    Hello, {{ auth()->user()->name }}! 👋
+                    Hello, {{ auth()->user()->name }}
                 </h2>
-                <p class="mb-0 text-white-50">
+                <p class="mb-0 text-white-50 small">
                     Here's what's happening on your platform today.
                 </p>
             </div>
             <div class="col-md-4 text-md-end mt-3 mt-md-0">
                 <div class="d-flex justify-content-md-end gap-2">
-                    <a href="{{ route('admin.users.index') }}" class="btn btn-light text-primary fw-medium px-4">
-                        <i class="bi bi-people me-2"></i>Manage Users
+                    <a href="{{ route('admin.users.index') }}" class="btn btn-light text-primary fw-medium px-3 btn-sm">
+                        <i class="bi bi-people me-1"></i>Manage Users
                     </a>
-                    <a href="{{ route('admin.courses.index') }}" class="btn btn-outline-light px-4">
-                        <i class="bi bi-book-fill me-2"></i>Courses
+                    <a href="{{ route('admin.courses.index') }}" class="btn btn-outline-light px-3 btn-sm">
+                        <i class="bi bi-book-fill me-1"></i>Courses
                     </a>
                 </div>
             </div>
         </div>
-        <!-- Decorative circles -->
-        <div class="position-absolute top-0 end-0 p-5 mt-n4 me-n4 rounded-circle bg-white"
-            style="width: 200px; height: 200px; opacity: 0.1; pointer-events: none;"></div>
-        <div class="position-absolute bottom-0 start-0 p-5 mb-n5 ms-n5 rounded-circle bg-white"
-            style="width: 150px; height: 150px; opacity: 0.1; pointer-events: none;"></div>
     </div>
 
     <!-- Stats Overview -->
-    <div class="row g-4 mb-5">
+    <div class="row g-3 mb-4">
         <!-- Total Users -->
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card p-4 h-100 shadow-sm">
+            <div class="stat-card p-3 h-100 shadow-sm">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <div class="icon-box bg-primary bg-opacity-10 text-primary">
                         <i class="bi bi-people-fill"></i>
@@ -89,7 +84,7 @@
 
         <!-- Courses -->
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card p-4 h-100 shadow-sm">
+            <div class="stat-card p-3 h-100 shadow-sm">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <div class="icon-box bg-success bg-opacity-10 text-success">
                         <i class="bi bi-book-fill"></i>
@@ -108,7 +103,7 @@
 
         <!-- Enrollments -->
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card p-4 h-100 shadow-sm">
+            <div class="stat-card p-3 h-100 shadow-sm">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <div class="icon-box bg-warning bg-opacity-10 text-warning">
                         <i class="bi bi-mortarboard-fill"></i>
@@ -124,7 +119,7 @@
 
         <!-- Pending Actions -->
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card p-4 h-100 shadow-sm {{ $pendingTeachers > 0 ? 'border-danger border-2' : '' }}">
+            <div class="stat-card p-3 h-100 shadow-sm {{ $pendingTeachers > 0 ? 'border-danger border-2' : '' }}">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <div class="icon-box bg-danger bg-opacity-10 text-danger">
                         <i class="bi bi-exclamation-triangle-fill"></i>

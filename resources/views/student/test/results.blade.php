@@ -271,11 +271,11 @@
         <div class="container text-center">
             <h1 class="mb-2">
                 @if(($evaluationPending ?? false))
-                    📝 Evaluation Pending
+                    <i class="bi bi-clock-history me-2"></i>Evaluation Pending
                 @elseif($attempt->passed)
-                    🎉 Congratulations!
+                    <i class="bi bi-award me-2"></i>Congratulations!
                 @else
-                    📚 Keep Learning!
+                    <i class="bi bi-book-half me-2"></i>Keep Learning!
                 @endif
             </h1>
             <h2>{{ $test->title }} - Results</h2>
@@ -372,7 +372,11 @@
                         <div class="question-result {{ $result['is_correct'] ? 'correct' : 'incorrect' }}">
                             <div class="question-header">
                                 <div class="result-icon {{ $result['is_correct'] ? 'correct' : 'incorrect' }}">
-                                    {{ $result['is_correct'] ? '✓' : '✗' }}
+                                    @if($result['is_correct'])
+                                        <i class="bi bi-check-lg" style="font-size: 13px;"></i>
+                                    @else
+                                        <i class="bi bi-x-lg" style="font-size: 11px;"></i>
+                                    @endif
                                 </div>
                                 <div>
                                     <strong>Question {{ $index + 1 }}</strong>

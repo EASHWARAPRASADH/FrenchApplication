@@ -32,20 +32,20 @@
         .dashboard-container {
             max-width: 1360px;
             margin: 0 auto;
-            padding: 2.5rem 1.5rem;
+            padding: 1.5rem 1rem;
             background: #F8FAFC;
         }
 
         /* Premium Welcome Card */
         .welcome-card {
-            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
-            border-radius: 20px;
-            padding: 3rem 2.5rem;
+            background: linear-gradient(135deg, #0066CC 0%, #1E40AF 100%);
+            border-radius: 16px;
+            padding: 1.5rem 2rem;
             color: white;
-            box-shadow: var(--shadow-lg);
+            box-shadow: var(--shadow-md);
             position: relative;
             overflow: hidden;
-            margin-bottom: 2.5rem;
+            margin-bottom: 1.5rem;
         }
 
         .welcome-card::before {
@@ -84,35 +84,35 @@
         }
 
         .welcome-title {
-            font-size: 2.5rem;
+            font-size: 1.75rem;
             font-weight: 700;
-            margin-bottom: 0.75rem;
-            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
         }
 
         .welcome-subtitle {
-            font-size: 1.125rem;
+            font-size: 1rem;
             opacity: 0.95;
-            line-height: 1.6;
-            font-weight: 500;
+            line-height: 1.5;
+            font-weight: 400;
         }
 
         /* Stats Grid - Professional Cards */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
         }
 
         .stat-card {
             background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: var(--shadow-md);
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
-            border: 1px solid rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .stat-card::before {
@@ -523,12 +523,21 @@
     <div class="dashboard-container">
         <!-- Premium Welcome Card -->
         <div class="welcome-card">
-            <div class="welcome-content">
-                <span class="welcome-icon">☀️</span>
-                <h1 class="welcome-title">Bonjour, {{ $user->name }}!</h1>
-                <p class="welcome-subtitle">
-                    Ready to continue your French learning journey? Let's keep up the fantastic work!
-                </p>
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 welcome-content">
+                <div>
+                    <h1 class="welcome-title">Bonjour, {{ $user->name }}!</h1>
+                    <p class="welcome-subtitle mb-0">
+                        Ready to continue your French learning journey? Let's keep up the fantastic work!
+                    </p>
+                </div>
+                <div class="d-flex gap-2 flex-shrink-0">
+                    <a href="{{ route('student.courses') }}" class="btn btn-light text-primary fw-semibold px-3 shadow-sm">
+                        <i class="bi bi-play-circle me-1"></i>My Courses
+                    </a>
+                    <a href="{{ route('student.status.index') }}" class="btn btn-outline-light px-3">
+                        <i class="bi bi-clock-history me-1"></i>Status Tracker
+                    </a>
+                </div>
             </div>
         </div>
 
