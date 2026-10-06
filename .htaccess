@@ -22,7 +22,7 @@ DirectoryIndex index.html index.php
     RewriteRule ^ - [L]
 
     # 4. Route Backend paths to Laravel (index.php)
-    RewriteCond %{REQUEST_URI} ^/(login|register|forgot-password|reset-password|dashboard|student|teacher|admin|api|logout|password|verify|email|confirm-password|profile|storage|file|files) [NC]
+    RewriteCond %{REQUEST_URI} ^/(login|register|forgot-password|reset-password|join-now|dashboard|student|teacher|admin|api|logout|password|verify|email|confirm-password|profile|storage|file|files) [NC]
     RewriteRule ^ index.php [L]
 
     # 5. Route Everything else to React (index.html)
