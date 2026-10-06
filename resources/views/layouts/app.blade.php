@@ -28,6 +28,23 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @stack('styles')
+
+    @if(Auth::check() && request()->is('student/*'))
+    <style>
+        /* Security & Anti-Theft: Prevent text selection / scraping on test & lesson questions */
+        .no-copy, .test-container, .question-card, .passage-content, .lesson-content, .audio-container, .exercise-content, .reading-passage {
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+        }
+        img.protected-media, .question-card img, .lesson-content img, .test-container img {
+            -webkit-user-drag: none !important;
+            user-drag: none !important;
+            pointer-events: auto;
+        }
+    </style>
+    @endif
 </head>
 
 <body>
@@ -787,6 +804,80 @@
             container.appendChild(div);
         };
     </script>
+
+    @if(Auth::check() && request()->is('student/*'))
+    <script>
+        (function() {
+            // Anti-theft: Lock all media elements (audio/video/img) against direct downloads
+            function lockMediaElements() {
+                document.querySelectorAll('audio, video').forEach(function(el) {
+                    el.setAttribute('controlsList', 'nodownload noplaybackrate');
+                    el.setAttribute('oncontextmenu', 'return false;');
+                    el.addEventListener('contextmenu', function(e) { e.preventDefault(); return false; });
+                });
+                document.querySelectorAll('.question-card img, .lesson-content img, .test-container img').forEach(function(img) {
+                    img.setAttribute('ondragstart', 'return false;');
+                    img.setAttribute('oncontextmenu', 'return false;');
+                    img.addEventListener('contextmenu', function(e) { e.preventDefault(); return false; });
+                });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', lockMediaElements);
+            } else {
+                lockMediaElements();
+            }
+
+            // Observe dynamic question blocks or tabs
+            if (document.body) {
+                const mediaObserver = new MutationObserver(lockMediaElements);
+                mediaObserver.observe(document.body, { childList: true, subtree: true });
+            }
+
+            // Keyboard shortcut & copy prevention on test & lesson pages
+            const isProtectedContentPage = window.location.pathname.includes('/student/test') || 
+                                           window.location.pathname.includes('/student/lesson') ||
+                                           window.location.pathname.includes('/student/course');
+
+            if (isProtectedContentPage) {
+                // Prevent right-click on protected areas
+                document.addEventListener('contextmenu', function(e) {
+                    if (e.target.closest('.test-container, .lesson-content, .question-card, .audio-container, .exercise-content, audio, video, img')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }, true);
+
+                // Prevent key combinations (Ctrl+S, Ctrl+P, Ctrl+U, Ctrl+C on test content, F12, DevTools)
+                document.addEventListener('keydown', function(e) {
+                    // Block F12
+                    if (e.key === 'F12' || e.keyCode === 123) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    if (e.ctrlKey || e.metaKey) {
+                        const k = e.key.toLowerCase();
+                        // Block Ctrl+S (Save page), Ctrl+P (Print page), Ctrl+U (View source)
+                        if (k === 's' || k === 'p' || k === 'u') {
+                            e.preventDefault();
+                            return false;
+                        }
+                        // Block Ctrl+Shift+I / J / C (DevTools inspector)
+                        if (e.shiftKey && (k === 'i' || k === 'j' || k === 'c')) {
+                            e.preventDefault();
+                            return false;
+                        }
+                        // Block copy shortcut inside question cards and passages
+                        if (k === 'c' && e.target.closest('.test-container, .question-card, .passage-content, .lesson-content')) {
+                            e.preventDefault();
+                            return false;
+                        }
+                    }
+                }, true);
+            }
+        })();
+    </script>
+    @endif
 </body>
 
 </html>

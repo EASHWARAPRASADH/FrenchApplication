@@ -74,23 +74,35 @@ Route::get('/courses', function () {
 })->name('courses.index');
 Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
 
-// File serving route (bypass symlink issues on LiteSpeed)
-// Using /files/ instead of /storage/ to avoid Hostinger security blocks
+// File serving route (secured with authentication and anti-theft headers)
 Route::get('/files/{path}', function ($path) {
-    $fullPath = storage_path('app/public/' . $path);
-
     // Security: prevent directory traversal
     if (strpos($path, '..') !== false || strpos($path, '//') !== false) {
         abort(403, 'Forbidden');
     }
+
+    $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+    $isOfficeDoc = in_array($ext, ['docx', 'pptx', 'xlsx', 'doc', 'ppt', 'xls'], true);
+    $ua = strtolower(request()->header('User-Agent', ''));
+    $isExternalOfficeViewer = $isOfficeDoc && (str_contains($ua, 'office') || str_contains($ua, 'microsoft'));
+
+    // Require authentication unless request is from Microsoft Office Online viewer for doc preview
+    if (!auth()->check() && !$isExternalOfficeViewer) {
+        abort(403, 'Access denied. Please sign in to access course materials.');
+    }
+
+    $fullPath = storage_path('app/public/' . $path);
 
     // Check if file exists
     if (!file_exists($fullPath) || !is_file($fullPath)) {
         abort(404, 'File not found');
     }
 
-    // Get file extension
-    $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+    $allowedDir = realpath(storage_path('app/public'));
+    $real = realpath($fullPath);
+    if (!$real || !$allowedDir || !str_starts_with($real, $allowedDir)) {
+        abort(403, 'Access denied');
+    }
 
     // Set appropriate content type
     $mimeTypes = [
@@ -122,11 +134,13 @@ Route::get('/files/{path}', function ($path) {
 
     $contentType = $mimeTypes[$ext] ?? 'application/octet-stream';
 
-    // Return file with appropriate headers
+    // Return file with strict security and privacy headers
     return response()->file($fullPath, [
         'Content-Type' => $contentType,
         'Accept-Ranges' => 'bytes',
-        'Cache-Control' => 'public, max-age=86400',
+        'X-Content-Type-Options' => 'nosniff',
+        'Cache-Control' => 'private, no-cache, no-store, must-revalidate',
+        'Pragma' => 'no-cache',
     ]);
 })->where('path', '.*')->name('serve-storage');
 
@@ -374,8 +388,12 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__ . '/auth.php';
 
-// Public route to serve uploaded files from storage (secured against path traversal)
+// Secured route to serve uploaded files from storage (auth-protected against unauthorized harvesting)
 Route::get('/storage/uploads/{type}/{filename}', function ($type, $filename) {
+    if (!auth()->check()) {
+        abort(403, 'Access denied. Please sign in to access media content.');
+    }
+
     // Prevent directory traversal attacks
     $cleanFilename = basename($filename);
     if ($cleanFilename !== $filename || str_contains($filename, '..')) {
@@ -384,7 +402,12 @@ Route::get('/storage/uploads/{type}/{filename}', function ($type, $filename) {
 
     $baseUploadDir = base_path('storage/uploads/' . $type);
     if (!is_dir($baseUploadDir)) {
-        abort(404, 'Category directory not found');
+        $fallback = storage_path('uploads/' . $type);
+        if (is_dir($fallback)) {
+            $baseUploadDir = $fallback;
+        } else {
+            abort(404, 'Category directory not found');
+        }
     }
 
     $allowedDir = realpath($baseUploadDir);
@@ -399,6 +422,81 @@ Route::get('/storage/uploads/{type}/{filename}', function ($type, $filename) {
         abort(403, 'Access denied');
     }
 
-    return response()->file($path);
+    $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+    $mimes = [
+        'mp3' => 'audio/mpeg',
+        'wav' => 'audio/wav',
+        'ogg' => 'audio/ogg',
+        'm4a' => 'audio/m4a',
+        'png' => 'image/png',
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'webp' => 'image/webp',
+        'mp4' => 'video/mp4',
+        'webm' => 'video/webm',
+        'pdf' => 'application/pdf',
+    ];
+    $contentType = $mimes[$ext] ?? 'application/octet-stream';
+
+    return response()->file($path, [
+        'Content-Type' => $contentType,
+        'Accept-Ranges' => 'bytes',
+        'X-Content-Type-Options' => 'nosniff',
+        'Cache-Control' => 'private, no-cache, no-store, must-revalidate',
+        'Pragma' => 'no-cache',
+    ]);
 })->where('type', 'audio|video|image|file')->name('storage.uploads');
+
+// Secured route to serve lesson content media (audio, video, images) with authentication
+Route::get('/storage/lesson-content/{path}', function ($path) {
+    if (!auth()->check()) {
+        abort(403, 'Access denied. Please sign in to access lesson media.');
+    }
+
+    if (str_contains($path, '..') || str_contains($path, '//')) {
+        abort(403, 'Forbidden');
+    }
+
+    $fullPath = base_path('storage/lesson-content/' . $path);
+    if (!file_exists($fullPath) || !is_file($fullPath)) {
+        $fallback = storage_path('lesson-content/' . $path);
+        if (file_exists($fallback) && is_file($fallback)) {
+            $fullPath = $fallback;
+        } else {
+            abort(404, 'Lesson content not found');
+        }
+    }
+
+    $allowedDir = realpath(base_path('storage/lesson-content'));
+    $fallbackDir = realpath(storage_path('lesson-content'));
+    $real = realpath($fullPath);
+
+    if (!$real || (!($allowedDir && str_starts_with($real, $allowedDir)) && !($fallbackDir && str_starts_with($real, $fallbackDir)))) {
+        abort(403, 'Access denied');
+    }
+
+    $ext = strtolower(pathinfo($real, PATHINFO_EXTENSION));
+    $mimes = [
+        'mp3' => 'audio/mpeg',
+        'wav' => 'audio/wav',
+        'ogg' => 'audio/ogg',
+        'm4a' => 'audio/m4a',
+        'png' => 'image/png',
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'webp' => 'image/webp',
+        'mp4' => 'video/mp4',
+        'webm' => 'video/webm',
+        'pdf' => 'application/pdf',
+    ];
+    $contentType = $mimes[$ext] ?? 'application/octet-stream';
+
+    return response()->file($real, [
+        'Content-Type' => $contentType,
+        'Accept-Ranges' => 'bytes',
+        'X-Content-Type-Options' => 'nosniff',
+        'Cache-Control' => 'private, no-cache, no-store, must-revalidate',
+        'Pragma' => 'no-cache',
+    ]);
+})->where('path', '.*')->name('storage.lesson-content');
 

@@ -16,7 +16,38 @@ DirectoryIndex index.html index.php
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
-    # 3. Prioritize Real Files and Folders (Assets, etc.)
+    # =========================================================================
+    # CYBERSECURITY & PROPRIETARY CONTENT THEFT PROTECTION
+    # =========================================================================
+
+    # A. Block all hidden files and directories (.env, .git, .htaccess, etc.)
+    RewriteRule (^|/)\.(?!well-known) - [F,L]
+
+    # B. Block direct access to logs, framework data, backups, and source code
+    RewriteRule ^storage/logs/ - [F,L]
+    RewriteRule ^storage/framework/ - [F,L]
+    RewriteRule ^storage_backup/ - [F,L]
+    RewriteRule \.(log|sql|bak|backup|env|sh|ini)$ - [F,L]
+    RewriteRule ^(artisan|composer\.(json|lock)|package(-lock)?\.json)$ - [F,L]
+
+    # C. Block automated scraping bots, CLI downloaders, and vulnerability crawlers from harvesting storage & media
+    RewriteCond %{HTTP_USER_AGENT} (curl|wget|python-requests|python-urllib|scrapy|aiohttp|go-http-client|httpie|libwww-perl|sqlmap|nikto|wpscan|HTTrack|teleport|masscan|zgrab) [NC]
+    RewriteCond %{REQUEST_URI} ^/(storage/|files/|file/) [NC]
+    RewriteRule ^ - [F,L]
+
+    # D. Anti-Hotlinking: Prevent external websites from leeching proprietary audio and lesson documents
+    RewriteCond %{HTTP_REFERER} !^$
+    RewriteCond %{HTTP_REFERER} !^https?://(www\.)?tslanguageschool\.com [NC]
+    RewriteCond %{HTTP_REFERER} !^https?://view\.officeapps\.live\.com [NC]
+    RewriteCond %{HTTP_REFERER} !^https?://docs\.google\.com [NC]
+    RewriteCond %{REQUEST_URI} \.(mp3|wav|ogg|m4a|pdf|doc|docx|ppt|pptx|xls|xlsx)$ [NC]
+    RewriteRule ^ - [F,L]
+
+    # E. Force sensitive media storage (uploads, lesson content, courses) through Laravel for authentication
+    RewriteCond %{REQUEST_URI} ^/storage/(uploads|lesson-content|courses|app)/ [NC]
+    RewriteRule ^ index.php [L]
+
+    # 3. Prioritize Real Files and Folders (Static Assets: css, js, fonts, public icons)
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
@@ -34,6 +65,8 @@ DirectoryIndex index.html index.php
     Header always set X-Content-Type-Options nosniff
     Header always set X-Frame-Options SAMEORIGIN
     Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
 </IfModule>
 
 # File Upload Limits

@@ -390,7 +390,7 @@
                                     @if(str_contains($blockData['video_url'], 'youtube.com') || str_contains($blockData['video_url'], 'youtu.be'))
                                         <iframe src="{{ $blockData['video_url'] }}" frameborder="0" allowfullscreen></iframe>
                                     @else
-                                        <video controls>
+                                        <video controls controlsList="nodownload" oncontextmenu="return false;">
                                             <source src="{{ $blockData['video_url'] }}" type="video/mp4">
                                             Your browser does not support the video tag.
                                         </video>
@@ -405,7 +405,7 @@
                             @if(isset($blockData['audio_url']) && $blockData['audio_url'])
                                 <div class="text-center">
                                     <i class="bi bi-music-note-beamed fs-2 text-purple mb-3"></i>
-                                    <audio controls class="audio-player">
+                                    <audio controls controlsList="nodownload noplaybackrate" oncontextmenu="return false;" class="audio-player">
                                         <source src="{{ $blockData['audio_url'] }}" type="audio/mpeg">
                                         Your browser does not support the audio element.
                                     </audio>

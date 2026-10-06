@@ -853,12 +853,12 @@
                                                 }
                                             @endphp
                                             @if($imageSrc)
-                                                <img src="{{ $imageSrc }}" alt="Question Image" class="mb-3">
+                                                <img src="{{ $imageSrc }}" alt="Question Image" class="mb-3" oncontextmenu="return false;" ondragstart="return false;">
                                             @endif
                                             @if($audioSrc)
                                                 <div class="audio-container">
                                                     <i class="bi bi-volume-up fs-3 text-warning mb-2"></i>
-                                                    <audio controls controlsList="nodownload" oncontextmenu="return false;" class="w-100">
+                                                    <audio controls controlsList="nodownload noplaybackrate" oncontextmenu="return false;" class="w-100">
                                                         <source src="{{ $audioSrc }}" type="audio/mpeg">
                                                         <source src="{{ $audioSrc }}" type="audio/wav">
                                                         <source src="{{ $audioSrc }}" type="audio/ogg">
@@ -875,7 +875,7 @@
                                             @endphp
                                             <div class="audio-container">
                                                 <i class="bi bi-volume-up fs-3 text-warning mb-2"></i>
-                                                <audio controls controlsList="nodownload" oncontextmenu="return false;" class="w-100">
+                                                <audio controls controlsList="nodownload noplaybackrate" oncontextmenu="return false;" class="w-100">
                                                     <source src="{{ $mediaSrc }}" type="audio/mpeg">
                                                     <source src="{{ $mediaSrc }}" type="audio/wav">
                                                     <source src="{{ $mediaSrc }}" type="audio/ogg">
@@ -904,7 +904,7 @@
                                                     $mediaSrc = asset($mediaSrc);
                                                 }
                                             @endphp
-                                            <img src="{{ $mediaSrc }}" alt="Question Image">
+                                            <img src="{{ $mediaSrc }}" alt="Question Image" oncontextmenu="return false;" ondragstart="return false;">
                                         @endif
                                     </div>
                                 @endif
@@ -963,7 +963,7 @@
                                                         value="{{ $optionIndex }}">
                                                     @if(!empty($option->option_image))
                                                         <img src="{{ preg_match('/^https?:\\/\\//', $option->option_image ?? '') ? $option->option_image : asset($option->option_image) }}"
-                                                            alt="Option Image" class="option-image me-2" style="max-height: 80px;">
+                                                            alt="Option Image" class="option-image me-2" style="max-height: 80px;" oncontextmenu="return false;" ondragstart="return false;">
                                                     @endif
                                                     <span class="option-text">{{ $option->option_text }}</span>
                                                 </li>
