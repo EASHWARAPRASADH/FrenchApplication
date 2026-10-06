@@ -294,6 +294,7 @@ class AssignmentController extends Controller
             now()->addMinutes($cacheMinutes),
             fn() => StudentContentPermission::where('student_id', $student->id)
                 ->where('course_id', $course->id)
+                ->where('content_id', '>', 0)
                 ->get()
                 ->keyBy(function ($p) {
                     return $p->content_type . ':' . $p->content_id;
@@ -337,6 +338,22 @@ class AssignmentController extends Controller
             $now = now();
             $adminId = auth()->id();
 
+            // Always ensure an explicit sentinel record exists (content_id = 0).
+            // This guarantees the student remains in Custom Restricted Mode even when all checkboxes are revoked.
+            StudentContentPermission::updateOrCreate(
+                [
+                    'student_id' => $student->id,
+                    'course_id' => $course->id,
+                    'content_type' => 'folder',
+                    'content_id' => 0,
+                ],
+                [
+                    'has_access' => false,
+                    'granted_by' => $adminId,
+                    'granted_at' => $now,
+                ]
+            );
+
             // Strategy: upsert records for all submitted entries; remove any not submitted if they belong to this course+student
             $seenKeys = [];
             foreach (['folder', 'lesson', 'test', 'file'] as $type) {
@@ -362,9 +379,11 @@ class AssignmentController extends Controller
             }
 
             // Revoke any previously granted access that was not submitted (deny-by-default)
+            // Never delete the sentinel marker (content_id = 0)
             StudentContentPermission::where('student_id', $student->id)
                 ->where('course_id', $course->id)
                 ->where('has_access', true)
+                ->where('content_id', '>', 0)
                 ->whereNotIn(DB::raw("CONCAT(content_type,':',content_id)"), $seenKeys)
                 ->delete();
 
@@ -414,6 +433,21 @@ class AssignmentController extends Controller
             DB::beginTransaction();
             $adminId = auth()->id();
             $now = now();
+
+            // Always ensure an explicit sentinel record exists (content_id = 0)
+            StudentContentPermission::updateOrCreate(
+                [
+                    'student_id' => $student->id,
+                    'course_id' => $course->id,
+                    'content_type' => 'folder',
+                    'content_id' => 0,
+                ],
+                [
+                    'has_access' => false,
+                    'granted_by' => $adminId,
+                    'granted_at' => $now,
+                ]
+            );
 
             if ($mode === 'solo') {
                 // 1. Find all sibling folders under section_folder_id except target_folder_id

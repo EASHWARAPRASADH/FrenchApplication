@@ -425,6 +425,7 @@ class DashboardController extends Controller
         $perms = StudentContentPermission::where('student_id', $studentId)
             ->where('course_id', $course->id)
             ->where('has_access', true)
+            ->where('content_id', '>', 0)
             ->get()
             ->groupBy('content_type')
             ->map(fn($g) => $g->pluck('content_id')->all());
@@ -469,6 +470,18 @@ class DashboardController extends Controller
             ->pluck('folder_id')->all();
 
         $startingFolderIds = array_unique(array_merge($explicitFolderIds, $lessonFolders, $testFolders, $fileFolders));
+
+        // When custom permissions are managed and zero items are allowed, student has 0 visible folders
+        if (empty($startingFolderIds) && empty($allowedLessonIds) && empty($allowedTestIds) && empty($allowedFileIds)) {
+            return [
+                'has_custom' => true,
+                'visible_folders' => [],
+                'folder' => [],
+                'lesson' => [],
+                'test' => [],
+                'file' => [],
+            ];
+        }
 
         // Walk up parent chain for all starting folders to include ancestor containers
         $allFolders = CourseFolder::where('course_id', $course->id)->get(['id', 'parent_folder_id']);

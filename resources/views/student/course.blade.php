@@ -283,6 +283,14 @@
                 <div class="content-list">
                     <h6 class="mb-3">Course Content</h6>
 
+                    @if($topFolders->isEmpty() && $rootLessons->isEmpty() && $rootTests->isEmpty())
+                        <div class="alert alert-light border py-4 text-center my-3 rounded-3 shadow-sm">
+                            <i class="bi bi-shield-lock text-muted fs-1 d-block mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">Content Locked</h6>
+                            <p class="text-muted small mb-0">No folders or test sets have been assigned to your account yet. Please attend your scheduled live session or contact your instructor to unlock your materials.</p>
+                        </div>
+                    @endif
+
                     {{-- Top-level folders --}}
                     <div class="mb-2 small text-muted">Folders</div>
                     @forelse($topFolders as $folder)
