@@ -174,7 +174,10 @@
         }
 
         function exportResults() {
-            alert('Export functionality coming soon');
+            const url = new URL("{{ route('admin.test-submissions.export') }}", window.location.origin);
+            const currentParams = new URLSearchParams(window.location.search);
+            currentParams.forEach((value, key) => url.searchParams.set(key, value));
+            window.location.href = url.toString();
         }
     </script>
 @endsection

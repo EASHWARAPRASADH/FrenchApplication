@@ -121,8 +121,8 @@
                                                 <i class="bi bi-bar-chart"></i>
                                             </a>
                                         @endif
-                                        <button class="btn btn-outline-primary" title="View"
-                                            onclick="alert('View user details - feature coming soon')">
+                                        <button type="button" class="btn btn-outline-primary" title="View Profile & Details"
+                                            onclick="openUserDetailsModal({{ $user->id }})">
                                             <i class="bi bi-eye"></i>
                                         </button>
                                         <button type="button" class="btn btn-outline-warning" title="Reset Password / Generate Link"
@@ -313,6 +313,133 @@
         </div>
     </div>
 
+    <!-- View User Details & Performance Modal -->
+    <div class="modal fade" id="viewUserModal" tabindex="-1" aria-labelledby="viewUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-light border-bottom">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 44px; height: 44px; font-weight: 700; font-size: 1.2rem;">
+                            <span id="vUserAvatar">U</span>
+                        </div>
+                        <div>
+                            <h5 class="modal-title mb-0" id="viewUserModalLabel">
+                                <span id="vUserModalName">User Details</span>
+                            </h5>
+                            <div class="small text-muted" id="vUserEmail">-</div>
+                        </div>
+                    </div>
+                    <div class="ms-auto d-flex align-items-center gap-2">
+                        <span id="vUserRoleBadge" class="badge bg-secondary">-</span>
+                        <span id="vUserStatusBadge" class="badge bg-success">-</span>
+                        <span id="vUserLevelBadge" class="badge bg-info text-dark">-</span>
+                        <button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Loading Spinner -->
+                    <div id="vUserLoading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <div class="text-muted small mt-2">Loading user details & performance...</div>
+                    </div>
+
+                    <!-- Content Container -->
+                    <div id="vUserContent" class="d-none">
+                        <!-- Key Stats Row -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-sm-4">
+                                <div class="card bg-light border-0 p-3 text-center">
+                                    <div class="text-muted small">Joined Date</div>
+                                    <div class="fw-bold fs-6 text-dark" id="vUserJoined">-</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="card bg-light border-0 p-3 text-center">
+                                    <div class="text-muted small">Last Activity</div>
+                                    <div class="fw-bold fs-6 text-dark" id="vUserLastLogin">-</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="card bg-light border-0 p-3 text-center">
+                                    <div class="text-muted small">Attendance Rate</div>
+                                    <div class="fw-bold fs-6 text-primary" id="vAttendanceRate">0%</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Nav Tabs -->
+                        <ul class="nav nav-tabs mb-3" id="vUserTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="v-courses-tab" data-bs-toggle="tab" data-bs-target="#v-courses-pane" type="button" role="tab">
+                                    <i class="bi bi-book me-1"></i>Enrolled Courses (<span id="vCoursesCount">0</span>)
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="v-tests-tab" data-bs-toggle="tab" data-bs-target="#v-tests-pane" type="button" role="tab">
+                                    <i class="bi bi-patch-check me-1"></i>Test History (<span id="vTestsCount">0</span>)
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="v-att-tab" data-bs-toggle="tab" data-bs-target="#v-att-pane" type="button" role="tab">
+                                    <i class="bi bi-calendar-check me-1"></i>Attendance
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Tab Content -->
+                        <div class="tab-content" id="vUserTabsContent">
+                            <!-- Courses Pane -->
+                            <div class="tab-pane fade show active" id="v-courses-pane" role="tabpanel">
+                                <div id="vCoursesList"></div>
+                            </div>
+
+                            <!-- Tests Pane -->
+                            <div class="tab-pane fade" id="v-tests-pane" role="tabpanel">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-sm align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Test Title</th>
+                                                <th>Course</th>
+                                                <th>Score</th>
+                                                <th>Result</th>
+                                                <th>Submitted</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="vSubmissionsList"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Attendance Pane -->
+                            <div class="tab-pane fade" id="v-att-pane" role="tabpanel">
+                                <div class="card border-0 bg-light p-3">
+                                    <div class="row text-center mb-3">
+                                        <div class="col-6">
+                                            <div class="text-muted small">Total Sessions</div>
+                                            <div class="fs-4 fw-bold" id="vAttTotal">0</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="text-muted small">Present Sessions</div>
+                                            <div class="fs-4 fw-bold text-success" id="vAttPresent">0</div>
+                                        </div>
+                                    </div>
+                                    <div class="progress" style="height: 10px;">
+                                        <div id="vAttRateBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <div class="text-muted small text-center mt-2" id="vAttRateText">0% attendance</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Delete User Modal
@@ -438,6 +565,104 @@
             }
         }
     });
+
+    window.openUserDetailsModal = function(userId) {
+        const modalEl = document.getElementById('viewUserModal');
+        if (!modalEl) return;
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+
+        document.getElementById('vUserLoading').classList.remove('d-none');
+        document.getElementById('vUserContent').classList.add('d-none');
+        document.getElementById('vUserModalName').textContent = 'Loading...';
+
+        fetch(`/admin/users/${userId}/details`, {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('vUserLoading').classList.add('d-none');
+            document.getElementById('vUserContent').classList.remove('d-none');
+            if (!data.success) {
+                alert('Failed to load user details.');
+                return;
+            }
+
+            const u = data.user;
+            document.getElementById('vUserModalName').textContent = u.name;
+            document.getElementById('vUserAvatar').textContent = (u.name || 'U').charAt(0).toUpperCase();
+            document.getElementById('vUserEmail').textContent = u.email;
+            document.getElementById('vUserJoined').textContent = u.joined_at;
+            document.getElementById('vUserLastLogin').textContent = u.last_login;
+            document.getElementById('vUserRoleBadge').textContent = u.role;
+            document.getElementById('vUserStatusBadge').textContent = u.status;
+            document.getElementById('vUserLevelBadge').textContent = u.language_level;
+
+            // Courses
+            document.getElementById('vCoursesCount').textContent = data.courses.length;
+            const coursesList = document.getElementById('vCoursesList');
+            coursesList.innerHTML = '';
+            if (data.courses.length === 0) {
+                coursesList.innerHTML = '<div class="text-muted p-4 text-center">No enrolled courses.</div>';
+            } else {
+                data.courses.forEach(c => {
+                    coursesList.innerHTML += `
+                        <div class="card mb-2 border shadow-none bg-light">
+                            <div class="card-body p-3 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1 fw-bold text-dark">${c.title} <span class="badge bg-white text-dark border ms-1">${c.level}</span></h6>
+                                    <div class="small text-muted">Enrolled: ${c.enrolled_at} &bull; Status: <span class="text-success fw-semibold">${c.status}</span></div>
+                                </div>
+                                <div class="text-end" style="min-width: 140px;">
+                                    <div class="fw-bold small mb-1">${c.progress_percentage}% completed</div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-primary" role="progressbar" style="width: ${c.progress_percentage}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+            }
+
+            // Submissions
+            document.getElementById('vTestsCount').textContent = data.submissions.length;
+            const subsList = document.getElementById('vSubmissionsList');
+            subsList.innerHTML = '';
+            if (data.submissions.length === 0) {
+                subsList.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No test submissions yet.</td></tr>';
+            } else {
+                data.submissions.forEach(s => {
+                    const badge = s.passed ? '<span class="badge bg-success">Passed</span>' : (s.status === 'pending' ? '<span class="badge bg-warning text-dark">Pending</span>' : '<span class="badge bg-danger">Failed</span>');
+                    subsList.innerHTML += `
+                        <tr>
+                            <td class="fw-semibold">${s.test_title}</td>
+                            <td class="text-muted small">${s.course_title}</td>
+                            <td><strong>${s.score !== null ? s.score + '%' : 'N/A'}</strong></td>
+                            <td>${badge}</td>
+                            <td class="text-muted small">${s.submitted_at}</td>
+                        </tr>`;
+                });
+            }
+
+            // Attendance
+            const att = data.attendance;
+            document.getElementById('vAttendanceRate').textContent = att.attendance_rate + '%';
+            document.getElementById('vAttTotal').textContent = att.total_sessions;
+            document.getElementById('vAttPresent').textContent = att.present_sessions;
+            document.getElementById('vAttRateBar').style.width = att.attendance_rate + '%';
+            document.getElementById('vAttRateText').textContent = `${att.present_sessions} / ${att.total_sessions} sessions (${att.attendance_rate}%)`;
+
+            // Reset tab to courses
+            const firstTab = document.getElementById('v-courses-tab');
+            if (firstTab && window.bootstrap) {
+                new bootstrap.Tab(firstTab).show();
+            }
+        })
+        .catch(err => {
+            document.getElementById('vUserLoading').classList.add('d-none');
+            alert('Error loading user details: ' + err.message);
+        });
+    };
 
     window.togglePasswordVisibility = function(inputId, btn) {
         const input = document.getElementById(inputId);

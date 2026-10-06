@@ -228,7 +228,155 @@ class DashboardController extends Controller
         ]);
     }
 
+    /**
+     * Get comprehensive details, enrollments, test history, and attendance for a user (AJAX).
+     */
+    public function userDetails(User $user)
+    {
+        $user->load(['enrollments.course']);
 
+        $courses = $user->enrollments->map(function ($enrollment) {
+            return [
+                'id' => $enrollment->course->id ?? null,
+                'title' => $enrollment->course->title ?? 'Untitled Course',
+                'level' => $enrollment->course->level ?? 'N/A',
+                'enrolled_at' => $enrollment->enrolled_at ? $enrollment->enrolled_at->format('M d, Y') : ($enrollment->created_at ? $enrollment->created_at->format('M d, Y') : 'N/A'),
+                'progress_percentage' => (float) ($enrollment->progress_percentage ?? 0),
+                'status' => $enrollment->status ?? 'active',
+            ];
+        });
+
+        // Test submissions
+        $submissions = TestSubmission::where('student_id', $user->id)
+            ->with(['test.course'])
+            ->orderBy('submitted_at', 'desc')
+            ->take(20)
+            ->get()
+            ->map(function ($sub) {
+                return [
+                    'id' => $sub->id,
+                    'test_title' => $sub->test->title ?? 'Untitled Test',
+                    'course_title' => $sub->test->course->title ?? 'N/A',
+                    'score' => $sub->score,
+                    'passed' => (bool) $sub->passed,
+                    'status' => $sub->status,
+                    'submitted_at' => $sub->submitted_at ? $sub->submitted_at->format('M d, Y H:i') : ($sub->created_at ? $sub->created_at->format('M d, Y H:i') : 'N/A'),
+                ];
+            });
+
+        // Attendance stats
+        $totalAttendance = \App\Models\StudentAttendance::where('user_id', $user->id)->count();
+        $presentAttendance = \App\Models\StudentAttendance::where('user_id', $user->id)->where('status', 'present')->count();
+        $attendanceRate = $totalAttendance > 0 ? round(($presentAttendance / $totalAttendance) * 100, 1) : 0;
+
+        return response()->json([
+            'success' => true,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => ucfirst($user->role),
+                'status' => ucfirst($user->status ?? 'active'),
+                'language_level' => strtoupper($user->language_level ?? 'Not Set'),
+                'joined_at' => $user->created_at ? $user->created_at->format('M d, Y') : 'N/A',
+                'last_login' => $user->last_login_at ? $user->last_login_at->diffForHumans() : 'Never',
+            ],
+            'courses' => $courses,
+            'submissions' => $submissions,
+            'attendance' => [
+                'total_sessions' => $totalAttendance,
+                'present_sessions' => $presentAttendance,
+                'attendance_rate' => $attendanceRate,
+            ],
+        ]);
+    }
+
+    /**
+     * Export test submissions to CSV with active filters.
+     */
+    public function exportTestSubmissions(Request $request)
+    {
+        $query = TestSubmission::with(['test.course', 'student']);
+
+        if ($request->filled('course')) {
+            $query->whereHas('test', function ($q) use ($request) {
+                $q->where('course_id', $request->course);
+            });
+        }
+
+        if ($request->filled('test')) {
+            $query->where('test_id', $request->test);
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status === 'pending') {
+                $query->where('status', 'pending');
+            } elseif ($request->status === 'passed') {
+                $query->where('passed', true);
+            } elseif ($request->status === 'failed') {
+                $query->where('passed', false)->where(function ($q) {
+                    $q->where('status', '!=', 'pending')->orWhereNull('status');
+                });
+            }
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('student', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $submissions = $query->orderBy('submitted_at', 'desc')->get();
+        $filename = 'test-submissions-' . now()->format('Y-m-d') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+
+        $callback = function () use ($submissions) {
+            $handle = fopen('php://output', 'w');
+            // Add UTF-8 BOM for Excel compatibility
+            fputs($handle, "\xEF\xBB\xBF");
+
+            // Header row
+            fputcsv($handle, [
+                'Submission ID',
+                'Student Name',
+                'Student Email',
+                'Course',
+                'Test Title',
+                'Score (%)',
+                'Result',
+                'Evaluation Status',
+                'Submitted Date',
+            ]);
+
+            foreach ($submissions as $sub) {
+                $result = $sub->passed ? 'Passed' : ($sub->status === 'pending' ? 'Pending Evaluation' : 'Failed');
+                fputcsv($handle, [
+                    $sub->id,
+                    $sub->student->name ?? 'N/A',
+                    $sub->student->email ?? 'N/A',
+                    $sub->test->course->title ?? 'N/A',
+                    $sub->test->title ?? 'N/A',
+                    $sub->score !== null ? $sub->score : 'N/A',
+                    $result,
+                    ucfirst($sub->status ?? 'completed'),
+                    $sub->submitted_at ? $sub->submitted_at->format('Y-m-d H:i:s') : ($sub->created_at ? $sub->created_at->format('Y-m-d H:i:s') : 'N/A'),
+                ]);
+            }
+
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 
     /**
      * Show course builder page

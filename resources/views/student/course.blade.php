@@ -523,6 +523,60 @@
     </div>
   </div>
 
+    <!-- Course Information Modal -->
+    <div class="modal fade" id="courseInfoModal" tabindex="-1" aria-labelledby="courseInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header border-0 pb-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem;">
+                    <div>
+                        <span class="badge bg-white text-dark mb-2 px-2 py-1">Level: {{ ucfirst($course->level ?? 'General') }}</span>
+                        <h5 class="modal-title fw-bold text-white mb-1" id="courseInfoModalLabel">{{ $course->title }}</h5>
+                        @if($course->teacher)
+                            <p class="mb-0 opacity-75 small text-white"><i class="bi bi-person me-1"></i>Instructor: {{ $course->teacher->name }}</p>
+                        @endif
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <h6 class="fw-bold mb-2">Course Overview</h6>
+                    <p class="text-muted small mb-4" style="white-space: pre-line;">{{ $course->description ?: 'No detailed syllabus description has been provided for this course.' }}</p>
+                    
+                    <div class="row g-3 text-center mb-4">
+                        <div class="col-4">
+                            <div class="p-3 rounded bg-light">
+                                <h5 class="fw-bold mb-0 text-primary">{{ $course->lessons->count() }}</h5>
+                                <small class="text-muted">Lessons</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-3 rounded bg-light">
+                                <h5 class="fw-bold mb-0 text-primary">{{ $course->tests->count() }}</h5>
+                                <small class="text-muted">Tests</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-3 rounded bg-light">
+                                <h5 class="fw-bold mb-0 text-success">{{ $progressPercentage }}%</h5>
+                                <small class="text-muted">Progress</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span>Overall Completion</span>
+                        <span class="fw-bold">{{ $completedLessons }} / {{ $course->lessons->count() }} lessons</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ $progressPercentage }}%"></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
         <script>
             let currentDocRawUrl = '';
@@ -636,7 +690,8 @@
 
             // Show course information
             function showCourseInfo() {
-                alert('Course information modal would open here');
+                const modal = new bootstrap.Modal(document.getElementById('courseInfoModal'));
+                modal.show();
             }
         </script>
     @endpush

@@ -345,11 +345,16 @@
 
                 const handleSignIn = e => {
                   e.preventDefault();
-                  alert("Sign-in logic here");
+                  const query = email ? `?email=${encodeURIComponent(email)}` : '';
+                  window.location.href = `{{ route('login') }}${query}`;
                 };
                 const handleSignUp = e => {
                   e.preventDefault();
-                  alert("Sign-up logic here");
+                  const params = new URLSearchParams();
+                  if (name) params.set('name', name);
+                  if (email) params.set('email', email);
+                  const qs = params.toString() ? `?${params.toString()}` : '';
+                  window.location.href = `{{ route('register') }}${qs}`;
                 };
 
                 return (
@@ -473,7 +478,7 @@
                                 <Checkbox id="remember" checked={remember} onChange={e => setRemember(e.target.checked)} />
                                 <Label htmlFor="remember" className="font-normal">Remember for 30 days</Label>
                               </div>
-                              <a href="#" className="text-sm text-primary hover:underline">Forgot password?</a>
+                              <a href="{{ route('password.request') }}" className="text-sm text-primary hover:underline">Forgot password?</a>
                             </div>
                             <Button type="submit" className="w-full">Sign In</Button>
                           </form>

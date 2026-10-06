@@ -373,7 +373,18 @@
                                             <i class="bi bi-play-fill me-2"></i>
                                             {{ $progressPercentage > 0 ? 'Continue' : 'Start' }}
                                         </a>
-                                        <button class="btn btn-outline" onclick="showCourseDetails({{ $course->id }})">
+                                        <button class="btn btn-outline" onclick="showCourseDetails(this)"
+                                            data-course-id="{{ $course->id }}"
+                                            data-title="{{ e($course->title) }}"
+                                            data-description="{{ e($course->description ?? 'No description provided.') }}"
+                                            data-teacher="{{ e($course->teacher->name ?? 'Instructor') }}"
+                                            data-level="{{ ucfirst($course->level ?? 'General') }}"
+                                            data-lessons="{{ $course->lessons->count() }}"
+                                            data-tests="{{ $course->tests->count() }}"
+                                            data-completed="{{ $completedLessons }}"
+                                            data-progress="{{ $progressPercentage }}"
+                                            data-url="{{ route('student.course.show', $course) }}"
+                                            title="Course Details">
                                             <i class="bi bi-info-circle"></i>
                                         </button>
                                     </div>
@@ -440,6 +451,58 @@
         @endif
     </div>
 
+    <!-- Course Details Modal -->
+    <div class="modal fade" id="courseDetailsModal" tabindex="-1" aria-labelledby="courseDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header border-0 pb-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem;">
+                    <div>
+                        <span class="badge bg-white text-dark mb-2 px-2 py-1" id="modalCourseLevel">Level</span>
+                        <h5 class="modal-title fw-bold text-white mb-1" id="courseDetailsModalLabel">Course Title</h5>
+                        <p class="mb-0 opacity-75 small text-white" id="modalCourseTeacher"><i class="bi bi-person me-1"></i>Instructor</p>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <h6 class="fw-bold mb-2">About this Course</h6>
+                    <p class="text-muted small mb-4" id="modalCourseDesc" style="white-space: pre-line;"></p>
+                    
+                    <div class="row g-3 text-center mb-4">
+                        <div class="col-4">
+                            <div class="p-3 rounded bg-light">
+                                <h5 class="fw-bold mb-0 text-primary" id="modalCourseLessons">0</h5>
+                                <small class="text-muted">Lessons</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-3 rounded bg-light">
+                                <h5 class="fw-bold mb-0 text-primary" id="modalCourseTests">0</h5>
+                                <small class="text-muted">Tests</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-3 rounded bg-light">
+                                <h5 class="fw-bold mb-0 text-success" id="modalCourseProgress">0%</h5>
+                                <small class="text-muted">Completed</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-success" id="modalCourseProgressBar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <small class="text-muted d-block text-end" id="modalCourseProgressText">0 of 0 lessons completed</small>
+                </div>
+                <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+                    <a href="#" id="modalCourseGoLink" class="btn btn-primary rounded-pill px-4">
+                        Go to Course <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
         <script>
             // Filter functionality
@@ -463,10 +526,37 @@
                 });
             });
 
-            // Course details modal (placeholder)
-            function showCourseDetails(courseId) {
-                // This would open a modal with detailed course information
-                alert('Course details modal would open here for course ID: ' + courseId);
+            // Course details modal
+            function showCourseDetails(btnOrId) {
+                let btn = btnOrId;
+                if (typeof btnOrId === 'number' || typeof btnOrId === 'string') {
+                    btn = document.querySelector(`button[data-course-id="${btnOrId}"]`);
+                }
+                if (!btn || !btn.dataset) return;
+
+                const title = btn.dataset.title || 'Course Details';
+                const desc = btn.dataset.description || 'No description provided.';
+                const teacher = btn.dataset.teacher || 'Instructor';
+                const level = btn.dataset.level || 'General';
+                const lessons = btn.dataset.lessons || '0';
+                const tests = btn.dataset.tests || '0';
+                const completed = btn.dataset.completed || '0';
+                const progress = btn.dataset.progress || '0';
+                const url = btn.dataset.url || '#';
+
+                document.getElementById('courseDetailsModalLabel').textContent = title;
+                document.getElementById('modalCourseLevel').textContent = level;
+                document.getElementById('modalCourseTeacher').innerHTML = `<i class="bi bi-person me-1"></i>${teacher}`;
+                document.getElementById('modalCourseDesc').textContent = desc;
+                document.getElementById('modalCourseLessons').textContent = lessons;
+                document.getElementById('modalCourseTests').textContent = tests;
+                document.getElementById('modalCourseProgress').textContent = progress + '%';
+                document.getElementById('modalCourseProgressBar').style.width = progress + '%';
+                document.getElementById('modalCourseProgressText').textContent = `${completed} of ${lessons} lessons completed`;
+                document.getElementById('modalCourseGoLink').href = url;
+
+                const modal = new bootstrap.Modal(document.getElementById('courseDetailsModal'));
+                modal.show();
             }
         </script>
     @endpush

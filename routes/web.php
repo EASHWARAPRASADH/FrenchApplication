@@ -215,6 +215,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
 
     // Users Management
     Route::get('/users', [AdminDashboardController::class, 'users'])->name('users.index');
+    Route::get('/users/{user}/details', [AdminDashboardController::class, 'userDetails'])->name('users.details');
     Route::delete('/users/{user}', [AdminDashboardController::class, 'destroyUser'])->name('users.destroy');
     Route::post('/users/{user}/reset-password', [AdminDashboardController::class, 'resetPasswordDirect'])->name('users.reset-password');
     Route::post('/users/{user}/generate-reset-link', [AdminDashboardController::class, 'generateResetLink'])->name('users.generate-reset-link');
@@ -329,6 +330,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
 
     // Test Submissions
     Route::get('/test-submissions', [AdminDashboardController::class, 'testSubmissions'])->name('test-submissions.index');
+    Route::get('/test-submissions/export', [AdminDashboardController::class, 'exportTestSubmissions'])->name('test-submissions.export');
     Route::get('/test-submissions/{submission}', [AdminDashboardController::class, 'showTestSubmission'])->name('test-submissions.show');
     Route::post('/test-submissions/{submission}', [AdminDashboardController::class, 'updateTestSubmission'])->name('test-submissions.update');
 
