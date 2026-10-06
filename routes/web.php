@@ -215,6 +215,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
 
     // Users Management
     Route::get('/users', [AdminDashboardController::class, 'users'])->name('users.index');
+    Route::delete('/users/{user}', [AdminDashboardController::class, 'destroyUser'])->name('users.destroy');
 
     // Course Management
     Route::get('/courses', [\App\Http\Controllers\Admin\CourseController::class, 'index'])->name('courses.index');
@@ -313,6 +314,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     // Student Content Permissions
     Route::get('/assignments/course/{course}/permissions/{student_id}', [\App\Http\Controllers\Admin\AssignmentController::class, 'permissions'])->name('assignments.course.permissions');
     Route::post('/assignments/course/{course}/permissions/{student_id}', [\App\Http\Controllers\Admin\AssignmentController::class, 'savePermissions'])->name('assignments.course.permissions.save');
+    Route::post('/assignments/course/{course}/quick-set/{student_id}', [\App\Http\Controllers\Admin\AssignmentController::class, 'quickAssignSet'])->name('assignments.course.quick-set');
 
     Route::get('/assignments/course/{course}/data', [\App\Http\Controllers\Admin\AssignmentController::class, 'getCourseData'])->name('assignments.course.data');
 

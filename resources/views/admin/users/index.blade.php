@@ -119,8 +119,15 @@
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                         @if($user->id !== auth()->id())
-                                            <button class="btn btn-outline-danger" title="Delete"
-                                                onclick="if(confirm('Delete user {{ $user->name }}?')) alert('Delete feature coming soon')">
+                                            <button type="button" class="btn btn-outline-danger" title="Delete User"
+                                                data-bs-toggle="modal" data-bs-target="#deleteUserModal"
+                                                data-user-id="{{ $user->id }}"
+                                                data-user-name="{{ $user->name }}"
+                                                data-user-email="{{ $user->email }}"
+                                                data-user-role="{{ ucfirst($user->role) }}"
+                                                data-has-courses="{{ $user->courses()->exists() ? '1' : '0' }}"
+                                                data-courses-count="{{ $user->courses()->count() }}"
+                                                data-delete-url="{{ route('admin.users.destroy', $user) }}">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         @endif
@@ -147,4 +154,83 @@
             </div>
         @endif
     </div>
+
+    <!-- Delete User Confirmation Modal -->
+    <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="deleteUserForm" method="POST" action="">
+                    @csrf
+                    @method('DELETE')
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="deleteUserModalLabel">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Delete User Account
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="teacherWarning" class="alert alert-warning d-none">
+                            <strong><i class="bi bi-shield-lock me-1"></i>Cannot delete instructor:</strong>
+                            This user is assigned as instructor to <span id="teacherCoursesCount">0</span> course(s). Reassign these courses first before deleting.
+                        </div>
+
+                        <p>Are you sure you want to permanently delete the following user?</p>
+                        <div class="card bg-light border p-3 mb-3">
+                            <div><strong>Name:</strong> <span id="modalUserName">-</span></div>
+                            <div><strong>Email:</strong> <span id="modalUserEmail">-</span></div>
+                            <div><strong>Role:</strong> <span id="modalUserRole" class="badge bg-secondary">-</span></div>
+                        </div>
+
+                        <div class="alert alert-danger py-2 mb-0">
+                            <small>
+                                <i class="bi bi-trash me-1"></i><strong>Warning:</strong> This action is permanent and cannot be undone. All test attempts, progress history, permissions, and enrollments for this user will be removed.
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" id="confirmDeleteBtn" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i>Permanently Delete User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const deleteModal = document.getElementById('deleteUserModal');
+        if (!deleteModal) return;
+
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const userName = button.getAttribute('data-user-name');
+            const userEmail = button.getAttribute('data-user-email');
+            const userRole = button.getAttribute('data-user-role');
+            const hasCourses = button.getAttribute('data-has-courses') === '1';
+            const coursesCount = button.getAttribute('data-courses-count') || '0';
+            const deleteUrl = button.getAttribute('data-delete-url');
+
+            document.getElementById('modalUserName').textContent = userName;
+            document.getElementById('modalUserEmail').textContent = userEmail;
+            document.getElementById('modalUserRole').textContent = userRole;
+            document.getElementById('deleteUserForm').action = deleteUrl;
+
+            const teacherWarning = document.getElementById('teacherWarning');
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+            if (hasCourses) {
+                teacherWarning.classList.remove('d-none');
+                document.getElementById('teacherCoursesCount').textContent = coursesCount;
+                confirmDeleteBtn.disabled = true;
+                confirmDeleteBtn.classList.add('disabled');
+            } else {
+                teacherWarning.classList.add('d-none');
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.classList.remove('disabled');
+            }
+        });
+    });
+    </script>
 @endsection

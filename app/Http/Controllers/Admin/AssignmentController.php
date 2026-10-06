@@ -213,12 +213,21 @@ class AssignmentController extends Controller
         $cacheMinutes = 10;
         $cachePrefix = "permissions:{$course->id}:{$student->id}";
 
-        // Load top-level items (cached, unpaginated for quick access)
+        // Load top-level items with nested relations (cached, unpaginated for tree view)
         $topFolders = \Cache::remember(
             "{$cachePrefix}:top-folders",
             now()->addMinutes($cacheMinutes),
             fn() => CourseFolder::where('course_id', $course->id)
                 ->whereNull('parent_folder_id')
+                ->with([
+                    'subfolders.lessons',
+                    'subfolders.tests',
+                    'subfolders.files',
+                    'subfolders.subfolders',
+                    'lessons',
+                    'tests',
+                    'files',
+                ])
                 ->orderBy('order_index')
                 ->get()
         );
@@ -372,6 +381,211 @@ class AssignmentController extends Controller
     }
 
     /**
+     * Quick allocate a specific set/sub-folder to a student (Solo mode or Progressive unlock).
+     */
+    public function quickAssignSet(Request $request, Course $course, $student_id)
+    {
+        $student = User::findOrFail($student_id);
+
+        $request->validate([
+            'section_folder_id' => 'required|exists:course_folders,id',
+            'target_folder_id' => 'nullable|exists:course_folders,id',
+            'mode' => 'required|in:solo,progressive_next,revoke_section',
+        ]);
+
+        $sectionFolder = CourseFolder::where('id', $request->section_folder_id)
+            ->where('course_id', $course->id)
+            ->firstOrFail();
+
+        $mode = $request->mode;
+        $targetFolder = null;
+        if (in_array($mode, ['solo', 'progressive_next'])) {
+            if (!$request->target_folder_id) {
+                return $request->wantsJson() || $request->ajax()
+                    ? response()->json(['success' => false, 'message' => 'Target set/folder is required.'], 422)
+                    : back()->with('error', 'Target set/folder is required.');
+            }
+            $targetFolder = CourseFolder::where('id', $request->target_folder_id)
+                ->where('course_id', $course->id)
+                ->firstOrFail();
+        }
+
+        try {
+            DB::beginTransaction();
+            $adminId = auth()->id();
+            $now = now();
+
+            if ($mode === 'solo') {
+                // 1. Find all sibling folders under section_folder_id except target_folder_id
+                $siblingFolderIds = CourseFolder::where('course_id', $course->id)
+                    ->where('parent_folder_id', $sectionFolder->id)
+                    ->where('id', '!=', $targetFolder->id)
+                    ->pluck('id')
+                    ->all();
+
+                if (!empty($siblingFolderIds)) {
+                    // Revoke sibling folders
+                    StudentContentPermission::where('student_id', $student->id)
+                        ->where('course_id', $course->id)
+                        ->where('content_type', 'folder')
+                        ->whereIn('content_id', $siblingFolderIds)
+                        ->delete();
+
+                    // Revoke tests & lessons in sibling folders
+                    $siblingTestIds = Test::where('course_id', $course->id)
+                        ->whereIn('folder_id', $siblingFolderIds)
+                        ->pluck('id')->all();
+                    if (!empty($siblingTestIds)) {
+                        StudentContentPermission::where('student_id', $student->id)
+                            ->where('course_id', $course->id)
+                            ->where('content_type', 'test')
+                            ->whereIn('content_id', $siblingTestIds)
+                            ->delete();
+                    }
+
+                    $siblingLessonIds = Lesson::where('course_id', $course->id)
+                        ->whereIn('folder_id', $siblingFolderIds)
+                        ->pluck('id')->all();
+                    if (!empty($siblingLessonIds)) {
+                        StudentContentPermission::where('student_id', $student->id)
+                            ->where('course_id', $course->id)
+                            ->where('content_type', 'lesson')
+                            ->whereIn('content_id', $siblingLessonIds)
+                            ->delete();
+                    }
+                }
+
+                // 2. Grant target folder
+                StudentContentPermission::updateOrCreate(
+                    [
+                        'student_id' => $student->id,
+                        'course_id' => $course->id,
+                        'content_type' => 'folder',
+                        'content_id' => $targetFolder->id,
+                    ],
+                    [
+                        'has_access' => true,
+                        'granted_by' => $adminId,
+                        'granted_at' => $now,
+                    ]
+                );
+
+                // 3. Grant all tests and lessons inside target folder
+                $targetTests = Test::where('course_id', $course->id)->where('folder_id', $targetFolder->id)->pluck('id');
+                foreach ($targetTests as $tId) {
+                    StudentContentPermission::updateOrCreate(
+                        ['student_id' => $student->id, 'course_id' => $course->id, 'content_type' => 'test', 'content_id' => $tId],
+                        ['has_access' => true, 'granted_by' => $adminId, 'granted_at' => $now]
+                    );
+                }
+
+                $targetLessons = Lesson::where('course_id', $course->id)->where('folder_id', $targetFolder->id)->pluck('id');
+                foreach ($targetLessons as $lId) {
+                    StudentContentPermission::updateOrCreate(
+                        ['student_id' => $student->id, 'course_id' => $course->id, 'content_type' => 'lesson', 'content_id' => $lId],
+                        ['has_access' => true, 'granted_by' => $adminId, 'granted_at' => $now]
+                    );
+                }
+
+                $message = "Solo Mode Active: '{$targetFolder->name}' assigned exclusively. Other sets in '{$sectionFolder->name}' were locked.";
+
+            } elseif ($mode === 'progressive_next') {
+                // Grant target folder and its tests/lessons without revoking previous ones
+                StudentContentPermission::updateOrCreate(
+                    [
+                        'student_id' => $student->id,
+                        'course_id' => $course->id,
+                        'content_type' => 'folder',
+                        'content_id' => $targetFolder->id,
+                    ],
+                    [
+                        'has_access' => true,
+                        'granted_by' => $adminId,
+                        'granted_at' => $now,
+                    ]
+                );
+
+                $targetTests = Test::where('course_id', $course->id)->where('folder_id', $targetFolder->id)->pluck('id');
+                foreach ($targetTests as $tId) {
+                    StudentContentPermission::updateOrCreate(
+                        ['student_id' => $student->id, 'course_id' => $course->id, 'content_type' => 'test', 'content_id' => $tId],
+                        ['has_access' => true, 'granted_by' => $adminId, 'granted_at' => $now]
+                    );
+                }
+
+                $targetLessons = Lesson::where('course_id', $course->id)->where('folder_id', $targetFolder->id)->pluck('id');
+                foreach ($targetLessons as $lId) {
+                    StudentContentPermission::updateOrCreate(
+                        ['student_id' => $student->id, 'course_id' => $course->id, 'content_type' => 'lesson', 'content_id' => $lId],
+                        ['has_access' => true, 'granted_by' => $adminId, 'granted_at' => $now]
+                    );
+                }
+
+                $message = "Progressive Mode: '{$targetFolder->name}' unlocked successfully.";
+
+            } elseif ($mode === 'revoke_section') {
+                // Revoke all folders under this section (and section itself)
+                $childFolderIds = CourseFolder::where('course_id', $course->id)
+                    ->where('parent_folder_id', $sectionFolder->id)
+                    ->pluck('id')->all();
+                $allFolderIdsToRevoke = array_merge([$sectionFolder->id], $childFolderIds);
+
+                StudentContentPermission::where('student_id', $student->id)
+                    ->where('course_id', $course->id)
+                    ->where('content_type', 'folder')
+                    ->whereIn('content_id', $allFolderIdsToRevoke)
+                    ->delete();
+
+                $allTestIds = Test::where('course_id', $course->id)
+                    ->whereIn('folder_id', $allFolderIdsToRevoke)
+                    ->pluck('id')->all();
+                if (!empty($allTestIds)) {
+                    StudentContentPermission::where('student_id', $student->id)
+                        ->where('course_id', $course->id)
+                        ->where('content_type', 'test')
+                        ->whereIn('content_id', $allTestIds)
+                        ->delete();
+                }
+
+                $allLessonIds = Lesson::where('course_id', $course->id)
+                    ->whereIn('folder_id', $allFolderIdsToRevoke)
+                    ->pluck('id')->all();
+                if (!empty($allLessonIds)) {
+                    StudentContentPermission::where('student_id', $student->id)
+                        ->where('course_id', $course->id)
+                        ->where('content_type', 'lesson')
+                        ->whereIn('content_id', $allLessonIds)
+                        ->delete();
+                }
+
+                $message = "Locked all sets under '{$sectionFolder->name}'.";
+            }
+
+            DB::commit();
+
+            $this->clearPermissionCache($course->id, $student->id);
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                ]);
+            }
+
+            return back()->with('success', $message);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error applying set allocation: ' . $e->getMessage()
+                ], 500);
+            }
+            return back()->with('error', 'Error applying set allocation: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Clear cached permission data for a specific course and student
      */
     private function clearPermissionCache(int $courseId, int $studentId): void
@@ -384,12 +598,9 @@ class AssignmentController extends Controller
         \Cache::forget("{$prefix}:root-tests");
         \Cache::forget("{$prefix}:root-files");
 
-        // Clear paginated caches (up to 10 pages for each type)
-        foreach (['all-folders', 'all-lessons', 'all-tests'] as $type) {
-            for ($page = 1; $page <= 10; $page++) {
-                \Cache::forget("{$prefix}:{$type}:page:{$page}");
-            }
-        }
+        \Cache::forget("{$prefix}:all-folders");
+        \Cache::forget("{$prefix}:all-lessons");
+        \Cache::forget("{$prefix}:all-tests");
 
         // Clear existing permissions cache
         \Cache::forget("{$prefix}:existing");

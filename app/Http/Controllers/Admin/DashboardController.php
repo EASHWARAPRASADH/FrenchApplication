@@ -112,6 +112,81 @@ class DashboardController extends Controller
         return view('admin.users.index', compact('users'));
     }
 
+    /**
+     * Permanently delete a user account and cascade delete all related data.
+     */
+    public function destroyUser(User $user)
+    {
+        if ($user->id === Auth::id()) {
+            return redirect()->route('admin.users.index')->with('error', 'You cannot delete your own admin account.');
+        }
+
+        if ($user->courses()->exists()) {
+            $count = $user->courses()->count();
+            return redirect()->route('admin.users.index')->with('error', "Cannot delete user {$user->name}: they are currently assigned as instructor to {$count} course(s). Please reassign or delete those courses first.");
+        }
+
+        $userName = $user->name;
+        $userEmail = $user->email;
+
+        try {
+            DB::beginTransaction();
+
+            // 1. Remove all content permissions
+            if (\Illuminate\Support\Facades\Schema::hasTable('student_content_permissions')) {
+                \App\Models\StudentContentPermission::where('student_id', $user->id)->delete();
+                \App\Models\StudentContentPermission::where('granted_by', $user->id)->update(['granted_by' => null]);
+            }
+
+            // 2. Remove test submissions and attempts
+            if (\Illuminate\Support\Facades\Schema::hasTable('test_submissions')) {
+                \App\Models\TestSubmission::where('student_id', $user->id)->delete();
+            }
+            if (\Illuminate\Support\Facades\Schema::hasTable('student_test_attempts')) {
+                \App\Models\StudentTestAttempt::where('student_id', $user->id)->delete();
+            }
+
+            // 3. Remove lesson progress and bookmarks
+            if (\Illuminate\Support\Facades\Schema::hasTable('lesson_progress')) {
+                \App\Models\LessonProgress::where('student_id', $user->id)->delete();
+            }
+            if (\Illuminate\Support\Facades\Schema::hasTable('lesson_bookmarks')) {
+                \App\Models\LessonBookmark::where('student_id', $user->id)->delete();
+            }
+
+            // 4. Remove attendance and daily statuses
+            if (\Illuminate\Support\Facades\Schema::hasTable('student_attendances')) {
+                \App\Models\StudentAttendance::where('user_id', $user->id)->delete();
+            }
+            if (\Illuminate\Support\Facades\Schema::hasTable('student_daily_statuses')) {
+                \App\Models\StudentDailyStatus::where('user_id', $user->id)->delete();
+            }
+
+            // 5. Remove achievements and enrollments
+            if (\Illuminate\Support\Facades\Schema::hasTable('user_achievements')) {
+                \DB::table('user_achievements')->where('user_id', $user->id)->delete();
+            }
+            if (\Illuminate\Support\Facades\Schema::hasTable('enrollments')) {
+                \App\Models\Enrollment::where('user_id', $user->id)->delete();
+            }
+
+            // 6. Remove active sessions if sessions table exists
+            if (\Illuminate\Support\Facades\Schema::hasTable('sessions')) {
+                \DB::table('sessions')->where('user_id', $user->id)->delete();
+            }
+
+            // 7. Delete user record
+            $user->delete();
+
+            DB::commit();
+
+            return redirect()->route('admin.users.index')->with('success', "User {$userName} ({$userEmail}) has been permanently deleted.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->route('admin.users.index')->with('error', 'Failed to delete user: ' . $e->getMessage());
+        }
+    }
+
 
 
     /**
