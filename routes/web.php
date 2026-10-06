@@ -62,7 +62,7 @@ Route::get('/testimonials', function () {
 })->name('testimonials');
 
 Route::get('/join-now', function () {
-    return redirect()->route('login');
+    return view('join-now');
 })->name('join-now');
 
 Route::get('/test', function () {
