@@ -484,4 +484,80 @@ class CourseController extends Controller
         }
     }
 
+    /**
+     * Get all courses and their folder trees for move/duplicate modals
+     */
+    public function allMoveOptions(Course $course)
+    {
+        $courses = Course::orderBy('title')->get(['id', 'title']);
+        $folders = CourseFolder::get(['id', 'name', 'course_id', 'parent_folder_id']);
+
+        $parentMap = [];
+        $nameMap = [];
+        foreach ($folders as $f) {
+            $parentMap[$f->id] = $f->parent_folder_id;
+            $nameMap[$f->id] = $f->name;
+        }
+
+        $courseOptions = [];
+        foreach ($courses as $c) {
+            $cFolders = $folders->where('course_id', $c->id);
+            $folderOptions = [];
+
+            // Add Root option for course
+            $folderOptions[] = [
+                'id' => null,
+                'name' => 'Course Root',
+                'path' => 'Root',
+                'display_name' => 'Course Root (Top Level)',
+            ];
+
+            foreach ($cFolders as $f) {
+                // Calculate depth for indentation
+                $depth = 0;
+                $curr = $f->parent_folder_id;
+                while ($curr) {
+                    $depth++;
+                    $curr = $parentMap[$curr] ?? null;
+                }
+
+                $indent = str_repeat("\u{00A0}\u{00A0}\u{00A0}\u{00A0}", $depth);
+                $prefix = $depth > 0 ? "└─ 📁 " : "📁 ";
+
+                $parts = [];
+                $current = $f->id;
+                while ($current) {
+                    $parts[] = $nameMap[$current] ?? (string)$current;
+                    $current = $parentMap[$current] ?? null;
+                }
+                $path = implode(' / ', array_reverse($parts));
+
+                $folderOptions[] = [
+                    'id' => $f->id,
+                    'name' => $f->name,
+                    'path' => $path,
+                    'display_name' => $indent . $prefix . $f->name,
+                ];
+            }
+
+            // Sort folders by path (except Root which stays first)
+            $rootOpt = array_shift($folderOptions);
+            usort($folderOptions, function ($a, $b) {
+                return strcmp($a['path'], $b['path']);
+            });
+            array_unshift($folderOptions, $rootOpt);
+
+            $courseOptions[] = [
+                'id' => $c->id,
+                'title' => $c->title,
+                'folders' => $folderOptions,
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'current_course_id' => $course->id,
+            'courses' => $courseOptions,
+        ]);
+    }
 }

@@ -803,12 +803,13 @@
             // Fetch course and folder options
             async function fetchMoveDuplicateOptions(type, id) {
                 try {
-                    // Let's use test 529 or any test to load course metadata
-                    // If no test ID is active, fall back to 529 as a metadata provider
-                    let sampleTestId = type === 'test' ? id : 529;
-                    const r = await fetch(`/admin/tests/${sampleTestId}/move-options`);
+                    if (courseOptionsData) {
+                        return { success: true, courses: courseOptionsData, current_course_id: courseId };
+                    }
+                    const r = await fetch(`/admin/courses/${courseId}/all-move-options`);
                     const data = await r.json();
                     if (!data.success) throw new Error(data.message || 'Failed to load options');
+                    courseOptionsData = data.courses;
                     return data;
                 } catch (e) {
                     console.error(e);
@@ -885,6 +886,11 @@
                         const opt = document.createElement('option');
                         opt.value = f.id || '';
                         opt.innerHTML = f.id ? f.display_name : 'Course Root (Top Level)';
+                        // Prevent moving a folder into itself
+                        if (activeItemType === 'folder' && !isDuplicationMode && courseIdSelected === courseId && f.id === parseInt(activeItemId)) {
+                            opt.disabled = true;
+                            opt.innerHTML += ' (Cannot select self)';
+                        }
                         folderSelect.appendChild(opt);
                     });
                 }
@@ -1164,17 +1170,52 @@
             }
 
 
+            // Context menu action: Edit
+            function editSelectedItem() {
+                const menu = document.getElementById('contextMenu');
+                const type = menu.dataset.type;
+                const id = menu.dataset.id;
+                hideContextMenu();
+                if (type && id) {
+                    editItem(type, id);
+                }
+            }
+
+            // Context menu action: Duplicate
+            function duplicateSelectedItem() {
+                const menu = document.getElementById('contextMenu');
+                const type = menu.dataset.type;
+                const id = menu.dataset.id;
+                hideContextMenu();
+                if (type && id) {
+                    openMoveDuplicateModal(type, id, true);
+                }
+            }
+
             // Context menu action: Move
             function moveSelectedItem() {
                 const menu = document.getElementById('contextMenu');
                 const type = menu.dataset.type;
                 const id = menu.dataset.id;
                 hideContextMenu();
-                if (type === 'folder') {
-                    openMoveFolder(id);
-                } else {
-                    alert('Move is currently available for folders only.');
+                if (type && id) {
+                    openMoveDuplicateModal(type, id, false);
                 }
+            }
+
+            // Context menu action: Delete
+            function deleteSelectedItem() {
+                const menu = document.getElementById('contextMenu');
+                const type = menu.dataset.type;
+                const id = menu.dataset.id;
+                hideContextMenu();
+                if (type && id) {
+                    deleteItem(type, id);
+                }
+            }
+
+            function openMoveFolder(id) {
+                openMoveDuplicateModal('folder', id, false);
             }
 
             // Form Submissions

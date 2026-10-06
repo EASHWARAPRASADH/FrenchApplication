@@ -31,7 +31,7 @@ $delFiles   = $pdo->exec("DELETE FROM student_content_permissions WHERE content_
 echo "✓ Removed {$delFolders} orphaned folder permissions, {$delTests} test permissions, {$delFiles} file permissions.\n\n";
 
 // 2. Drop dead ghost tables
-$deadTables = ['settings', 'admin_logs', 'test_drag_drop_items', 'user_achievements', 'achievements'];
+$deadTables = ['settings', 'admin_logs', 'user_achievements', 'achievements'];
 echo "2. Purging empty / dead ghost tables...\n";
 foreach ($deadTables as $table) {
     $count = $pdo->query("SELECT COUNT(*) FROM `{$table}`")->fetchColumn();

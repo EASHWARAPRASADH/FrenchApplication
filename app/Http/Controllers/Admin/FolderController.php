@@ -266,22 +266,74 @@ class FolderController extends Controller
     }
 
     /**
-     * Recursively update course_id of a folder, its lessons, tests, and subfolders
+     * Recursively update course_id of a folder, its lessons, tests, files, permissions, and subfolders
      */
     private function moveFolderToCourse(CourseFolder $folder, int $newCourseId)
     {
         $folder->course_id = $newCourseId;
         $folder->save();
 
-        // Update all lessons in this folder
+        // Update all lessons in this folder and collect IDs
+        $lessonIds = \App\Models\Lesson::where('folder_id', $folder->id)->pluck('id')->all();
         \App\Models\Lesson::where('folder_id', $folder->id)->update(['course_id' => $newCourseId]);
 
-        // Update all tests in this folder
+        // Update all tests in this folder and collect IDs
+        $testIds = \App\Models\Test::where('folder_id', $folder->id)->pluck('id')->all();
         \App\Models\Test::where('folder_id', $folder->id)->update(['course_id' => $newCourseId]);
+
+        // Update all course files in this folder and collect IDs
+        $fileIds = \App\Models\CourseFile::where('folder_id', $folder->id)->pluck('id')->all();
+        \App\Models\CourseFile::where('folder_id', $folder->id)->update(['course_id' => $newCourseId]);
+
+        // Synchronize permissions cleanly to the new course
+        $this->syncPermissionsToCourse('folder', [$folder->id], $newCourseId);
+        $this->syncPermissionsToCourse('lesson', $lessonIds, $newCourseId);
+        $this->syncPermissionsToCourse('test', $testIds, $newCourseId);
+        $this->syncPermissionsToCourse('file', $fileIds, $newCourseId);
 
         // Recursively update subfolders
         foreach ($folder->subfolders as $sub) {
             $this->moveFolderToCourse($sub, $newCourseId);
+        }
+    }
+
+    /**
+     * Synchronize permissions for moved content to the new course without unique constraint violations
+     */
+    private function syncPermissionsToCourse(string $contentType, array $contentIds, int $newCourseId): void
+    {
+        if (empty($contentIds)) {
+            return;
+        }
+
+        $perms = \App\Models\StudentContentPermission::where('content_type', $contentType)
+            ->whereIn('content_id', $contentIds)
+            ->get();
+
+        foreach ($perms as $p) {
+            if ($p->course_id === $newCourseId) {
+                continue;
+            }
+
+            $existing = \App\Models\StudentContentPermission::where('student_id', $p->student_id)
+                ->where('course_id', $newCourseId)
+                ->where('content_type', $contentType)
+                ->where('content_id', $p->content_id)
+                ->first();
+
+            if ($existing) {
+                if (!$existing->has_access && $p->has_access) {
+                    $existing->has_access = true;
+                    if (isset($p->access_level)) {
+                        $existing->access_level = $p->access_level;
+                    }
+                    $existing->save();
+                }
+                $p->delete();
+            } else {
+                $p->course_id = $newCourseId;
+                $p->save();
+            }
         }
     }
 
@@ -358,6 +410,7 @@ class FolderController extends Controller
         }
 
         // Replicate all tests
+        $hasDragDropTable = \Illuminate\Support\Facades\Schema::hasTable('test_drag_drop_items');
         foreach ($folder->tests as $test) {
             $newTest = $test->replicate();
             $newTest->course_id = $courseId;
@@ -377,12 +430,22 @@ class FolderController extends Controller
                     $newOpt->save();
                 }
 
-                foreach ($q->dragDropItems as $dd) {
-                    $newDd = $dd->replicate();
-                    $newDd->question_id = $newQ->id;
-                    $newDd->save();
+                if ($hasDragDropTable) {
+                    foreach ($q->dragDropItems as $dd) {
+                        $newDd = $dd->replicate();
+                        $newDd->question_id = $newQ->id;
+                        $newDd->save();
+                    }
                 }
             }
+        }
+
+        // Replicate all files
+        foreach ($folder->files as $file) {
+            $newFile = $file->replicate();
+            $newFile->course_id = $courseId;
+            $newFile->folder_id = $newFolder->id;
+            $newFile->save();
         }
 
         // Replicate all subfolders recursively

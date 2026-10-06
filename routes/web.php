@@ -226,6 +226,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::delete('/courses/{course}', [\App\Http\Controllers\Admin\CourseController::class, 'destroy'])->name('courses.destroy');
     Route::get('/courses/{course}/builder', [\App\Http\Controllers\Admin\CourseController::class, 'builder'])->name('courses.builder');
     Route::get('/courses/{course}/folder/{folder}/items', [\App\Http\Controllers\Admin\CourseController::class, 'getFolderContents'])->name('courses.folder.contents');
+    Route::get('/courses/{course}/all-move-options', [\App\Http\Controllers\Admin\CourseController::class, 'allMoveOptions'])->name('courses.all-move-options');
 
     // Course Builder AJAX Routes
     Route::post('/folders', [\App\Http\Controllers\Admin\FolderController::class, 'store'])->name('folders.store');

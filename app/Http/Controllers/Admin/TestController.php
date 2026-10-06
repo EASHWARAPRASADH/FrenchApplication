@@ -731,12 +731,47 @@ class TestController extends Controller
             }
         }
 
+        \DB::beginTransaction();
         try {
+            $oldCourseId = $test->course_id;
+
             $test->update([
                 'course_id' => $courseId,
                 'folder_id' => $folderId,
                 'order_index' => $this->getNextOrderIndex($courseId, $folderId)
             ]);
+
+            if ($oldCourseId !== $courseId) {
+                // Synchronize permissions for this test into destination course without unique constraint violation
+                $perms = \App\Models\StudentContentPermission::where('content_type', 'test')
+                    ->where('content_id', $test->id)
+                    ->get();
+
+                foreach ($perms as $p) {
+                    if ($p->course_id === $courseId) {
+                        continue;
+                    }
+
+                    $existing = \App\Models\StudentContentPermission::where('student_id', $p->student_id)
+                        ->where('course_id', $courseId)
+                        ->where('content_type', 'test')
+                        ->where('content_id', $test->id)
+                        ->first();
+
+                    if ($existing) {
+                        if (!$existing->has_access && $p->has_access) {
+                            $existing->has_access = true;
+                            $existing->save();
+                        }
+                        $p->delete();
+                    } else {
+                        $p->course_id = $courseId;
+                        $p->save();
+                    }
+                }
+            }
+
+            \DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -744,6 +779,7 @@ class TestController extends Controller
                 'test' => $test
             ]);
         } catch (\Exception $e) {
+            \DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Error moving test: ' . $e->getMessage()
@@ -789,6 +825,7 @@ class TestController extends Controller
 
             // Replicate questions
             $questions = $test->questions()->orderBy('order')->get();
+            $hasDragDropTable = \Illuminate\Support\Facades\Schema::hasTable('test_drag_drop_items');
             foreach ($questions as $q) {
                 $newQ = $q->replicate();
                 $newQ->test_id = $newTest->id;
@@ -801,11 +838,13 @@ class TestController extends Controller
                     $newOpt->save();
                 }
 
-                // Replicate drag & drop items
-                foreach ($q->dragDropItems as $dd) {
-                    $newDd = $dd->replicate();
-                    $newDd->question_id = $newQ->id;
-                    $newDd->save();
+                // Replicate drag & drop items safely if table exists
+                if ($hasDragDropTable) {
+                    foreach ($q->dragDropItems as $dd) {
+                        $newDd = $dd->replicate();
+                        $newDd->question_id = $newQ->id;
+                        $newDd->save();
+                    }
                 }
             }
 

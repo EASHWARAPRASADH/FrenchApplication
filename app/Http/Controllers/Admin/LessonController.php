@@ -264,12 +264,47 @@ class LessonController extends Controller
             }
         }
 
+        \DB::beginTransaction();
         try {
+            $oldCourseId = $lesson->course_id;
+
             $lesson->update([
                 'course_id' => $courseId,
                 'folder_id' => $folderId,
                 'order_index' => $this->getNextOrderIndex($courseId, $folderId)
             ]);
+
+            if ($oldCourseId !== $courseId) {
+                // Synchronize permissions for this lesson into destination course
+                $perms = \App\Models\StudentContentPermission::where('content_type', 'lesson')
+                    ->where('content_id', $lesson->id)
+                    ->get();
+
+                foreach ($perms as $p) {
+                    if ($p->course_id === $courseId) {
+                        continue;
+                    }
+
+                    $existing = \App\Models\StudentContentPermission::where('student_id', $p->student_id)
+                        ->where('course_id', $courseId)
+                        ->where('content_type', 'lesson')
+                        ->where('content_id', $lesson->id)
+                        ->first();
+
+                    if ($existing) {
+                        if (!$existing->has_access && $p->has_access) {
+                            $existing->has_access = true;
+                            $existing->save();
+                        }
+                        $p->delete();
+                    } else {
+                        $p->course_id = $courseId;
+                        $p->save();
+                    }
+                }
+            }
+
+            \DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -277,6 +312,7 @@ class LessonController extends Controller
                 'lesson' => $lesson
             ]);
         } catch (\Exception $e) {
+            \DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Error moving lesson: ' . $e->getMessage()
