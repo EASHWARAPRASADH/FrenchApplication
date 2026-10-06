@@ -216,6 +216,8 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     // Users Management
     Route::get('/users', [AdminDashboardController::class, 'users'])->name('users.index');
     Route::delete('/users/{user}', [AdminDashboardController::class, 'destroyUser'])->name('users.destroy');
+    Route::post('/users/{user}/reset-password', [AdminDashboardController::class, 'resetPasswordDirect'])->name('users.reset-password');
+    Route::post('/users/{user}/generate-reset-link', [AdminDashboardController::class, 'generateResetLink'])->name('users.generate-reset-link');
 
     // Course Management
     Route::get('/courses', [\App\Http\Controllers\Admin\CourseController::class, 'index'])->name('courses.index');

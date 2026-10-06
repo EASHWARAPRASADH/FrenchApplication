@@ -118,6 +118,12 @@
                                     <i class="bi bi-check-circle-fill me-2"></i> {{ session('status') }}
                                 </div>
                             @endif
+                            @if (session('error'))
+                                <div class="alert alert-danger border-0 shadow-sm mb-4 bg-danger bg-opacity-10 text-danger rounded-3"
+                                    role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ session('error') }}
+                                </div>
+                            @endif
 
                             <form method="POST" action="{{ route('password.email') }}">
                                 @csrf

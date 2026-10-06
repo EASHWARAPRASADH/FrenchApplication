@@ -10,6 +10,9 @@ use App\Models\TestSubmission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
@@ -185,6 +188,44 @@ class DashboardController extends Controller
             DB::rollBack();
             return redirect()->route('admin.users.index')->with('error', 'Failed to delete user: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Directly update/reset a user's password from the admin panel.
+     */
+    public function resetPasswordDirect(Request $request, User $user)
+    {
+        $request->validate([
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user->forceFill([
+            'password' => Hash::make($request->password),
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        return redirect()->route('admin.users.index')
+            ->with('success', "Password for {$user->name} ({$user->email}) has been updated successfully.");
+    }
+
+    /**
+     * Generate a one-click password reset link for a user.
+     */
+    public function generateResetLink(User $user)
+    {
+        $token = Password::broker()->createToken($user);
+        $resetUrl = route('password.reset', [
+            'token' => $token,
+            'email' => $user->email,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'reset_url' => $resetUrl,
+            'user_name' => $user->name,
+            'user_email' => $user->email,
+            'message' => "Reset link generated for {$user->name}.",
+        ]);
     }
 
 

@@ -16,6 +16,10 @@
             border-bottom: 1px solid #dee2e6;
             padding: 1rem;
             border-radius: 0.5rem 0.5rem 0 0;
+            position: sticky;
+            top: 60px;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
         }
 
         .file-manager-sidebar {
@@ -23,6 +27,58 @@
             border-right: 1px solid #dee2e6;
             min-height: 550px;
             padding: 1rem;
+            position: sticky;
+            top: 135px;
+            max-height: calc(100vh - 155px);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .folder-toggle-btn {
+            background: none;
+            border: none;
+            padding: 0;
+            color: #6c757d;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .folder-toggle-btn:hover {
+            background: #e9ecef;
+            color: #212529;
+        }
+
+        .folder-toggle-btn i {
+            transition: transform 0.2s ease;
+            font-size: 0.75rem;
+        }
+
+        .folder-toggle-btn.expanded i {
+            transform: rotate(90deg);
+        }
+
+        .sidebar-search-box {
+            position: sticky;
+            top: -1rem;
+            background: white;
+            z-index: 10;
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #f1f3f5;
+        }
+
+        .central-pane-header {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
         }
 
         .file-manager-content {
@@ -94,7 +150,7 @@
         }
 
         .folder-tree .folder-item {
-            padding: 0.5rem;
+            padding: 0.4rem 0.5rem;
             border-radius: 0.25rem;
             cursor: pointer;
             display: flex;
@@ -109,10 +165,16 @@
         .folder-tree .folder-item.active {
             background: #e3f2fd;
             color: #1976d2;
+            font-weight: 600;
         }
 
         .folder-tree .nested {
-            padding-left: 1.5rem;
+            padding-left: 1.25rem;
+            list-style: none;
+        }
+
+        .folder-tree .nested.collapsed {
+            display: none !important;
         }
 
         .context-menu {
@@ -282,32 +344,67 @@
             <!-- Sidebar - Folder Tree -->
             <div class="col-md-3">
                 <div class="file-manager-sidebar">
-                    <h6 class="mb-3">
-                        <i class="bi bi-folder-fill me-2"></i>
-                        Course Structure
-                    </h6>
+                    <div class="sidebar-search-box">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0 small fw-bold text-uppercase text-secondary">
+                                <i class="bi bi-folder-fill me-1 text-primary"></i>
+                                Structure
+                            </h6>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="expandAllSidebarFolders()" title="Expand All">
+                                    <i class="bi bi-arrows-expand me-1"></i>Expand
+                                </button>
+                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="collapseAllSidebarFolders()" title="Collapse All">
+                                    <i class="bi bi-arrows-collapse me-1"></i>Collapse
+                                </button>
+                            </div>
+                        </div>
+                        <div class="input-group input-group-sm">
+                            <input type="text" id="sidebarFolderSearch" class="form-control" placeholder="Search folder/set..." onkeyup="filterSidebarFolders()">
+                            <button class="btn btn-outline-secondary" type="button" onclick="clearSidebarFolderSearch()"><i class="bi bi-x-lg"></i></button>
+                        </div>
+                    </div>
+
                     <ul class="folder-tree" id="folderTree">
                         <li>
                             <div class="folder-item active" onclick="selectFolder('root')">
                                 <i class="bi bi-house me-2"></i>
-                                {{ $course->title }}
+                                <span class="folder-name">{{ $course->title }}</span>
                             </div>
-                            <ul class="nested">
+                            <ul class="nested" id="nested-root">
                                 @foreach($course->folders as $folder)
-                                    <li>
-                                        <div class="folder-item" onclick="selectFolder('{{ $folder->id }}')"
-                                            oncontextmenu="showContextMenu(event, 'folder', '{{ $folder->id }}')">
-                                            <i class="bi bi-folder me-2"></i>
-                                            {{ $folder->name }}
+                                    @php
+                                        $hasSub = $folder->subfolders->count() > 0;
+                                    @endphp
+                                    <li class="sidebar-folder-li" data-folder-id="{{ $folder->id }}" data-folder-name="{{ strtolower($folder->name) }}">
+                                        <div class="d-flex align-items-center">
+                                            @if($hasSub)
+                                                <button type="button" class="folder-toggle-btn me-1" id="toggle-btn-{{ $folder->id }}" onclick="toggleFolderNode('{{ $folder->id }}', event)" title="Toggle subfolders">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </button>
+                                            @else
+                                                <span style="width: 20px;" class="me-1"></span>
+                                            @endif
+                                            <div class="folder-item flex-grow-1" onclick="selectFolder('{{ $folder->id }}')"
+                                                oncontextmenu="showContextMenu(event, 'folder', '{{ $folder->id }}')">
+                                                <i class="bi bi-folder me-2 text-warning"></i>
+                                                <span class="folder-name">{{ $folder->name }}</span>
+                                                @if($hasSub)
+                                                    <span class="badge bg-light text-dark ms-auto font-monospace small">{{ $folder->subfolders->count() }}</span>
+                                                @endif
+                                            </div>
                                         </div>
-                                        @if($folder->subfolders->count() > 0)
-                                            <ul class="nested">
+                                        @if($hasSub)
+                                            <ul class="nested collapsed" id="nested-{{ $folder->id }}">
                                                 @foreach($folder->subfolders as $subfolder)
-                                                    <li>
+                                                    <li class="sidebar-folder-li" data-folder-id="{{ $subfolder->id }}" data-folder-name="{{ strtolower($subfolder->name) }}" data-parent-id="{{ $folder->id }}">
                                                         <div class="folder-item" onclick="selectFolder('{{ $subfolder->id }}')"
                                                             oncontextmenu="showContextMenu(event, 'folder', '{{ $subfolder->id }}')">
-                                                            <i class="bi bi-folder me-2"></i>
-                                                            {{ $subfolder->name }}
+                                                            <i class="bi bi-folder me-2 text-warning"></i>
+                                                            <span class="folder-name">{{ $subfolder->name }}</span>
+                                                            @if($subfolder->tests->count() > 0)
+                                                                <span class="badge bg-warning bg-opacity-25 text-dark ms-auto small">{{ $subfolder->tests->count() }}T</span>
+                                                            @endif
                                                         </div>
                                                     </li>
                                                 @endforeach
@@ -324,6 +421,33 @@
             <!-- Main Content Area -->
             <div class="col-md-9">
                 <div class="file-manager-content">
+                    <!-- Central Pane Context Actions Bar -->
+                    <div class="central-pane-header d-flex justify-content-between align-items-center shadow-sm">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-folder2-open text-primary fs-4 me-2"></i>
+                            <div>
+                                <h6 class="mb-0 fw-bold" id="centralPaneTitle">{{ $course->title }} (Root)</h6>
+                                <small class="text-muted" id="centralPaneCount">
+                                    {{ $course->folders->count() }} folders, {{ $course->lessons->where('folder_id', null)->count() }} lessons, {{ $course->tests->count() }} tests
+                                </small>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary btn-sm" onclick="uploadFile()" title="Upload files directly into this folder">
+                                <i class="bi bi-cloud-upload me-1"></i>Upload Files
+                            </button>
+                            <button class="btn btn-warning btn-sm" onclick="createTest()" title="Create a test in this folder">
+                                <i class="bi bi-clipboard-plus me-1"></i>New Test
+                            </button>
+                            <button class="btn btn-success btn-sm" onclick="createLesson()" title="Create a lesson in this folder">
+                                <i class="bi bi-file-earmark-plus me-1"></i>New Lesson
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="createFolder()" title="Create a subfolder">
+                                <i class="bi bi-folder-plus me-1"></i>New Folder
+                            </button>
+                        </div>
+                    </div>
+
                     <div id="fileList" class="list-view">
                         <!-- Root Level Items -->
                         @foreach($course->folders as $folder)
@@ -1001,6 +1125,70 @@
                 loadFolderContent('root');
             }
 
+            function toggleFolderNode(folderId, event) {
+                if (event) event.stopPropagation();
+                const nestedUl = document.getElementById('nested-' + folderId);
+                const toggleBtn = document.getElementById('toggle-btn-' + folderId);
+                if (!nestedUl) return;
+
+                if (nestedUl.classList.contains('collapsed')) {
+                    nestedUl.classList.remove('collapsed');
+                    if (toggleBtn) toggleBtn.classList.add('expanded');
+                } else {
+                    nestedUl.classList.add('collapsed');
+                    if (toggleBtn) toggleBtn.classList.remove('expanded');
+                }
+            }
+
+            function expandAllSidebarFolders() {
+                document.querySelectorAll('.folder-tree .nested').forEach(ul => ul.classList.remove('collapsed'));
+                document.querySelectorAll('.folder-toggle-btn').forEach(btn => btn.classList.add('expanded'));
+            }
+
+            function collapseAllSidebarFolders() {
+                document.querySelectorAll('.folder-tree .nested:not(#nested-root)').forEach(ul => ul.classList.add('collapsed'));
+                document.querySelectorAll('.folder-toggle-btn').forEach(btn => btn.classList.remove('expanded'));
+            }
+
+            function filterSidebarFolders() {
+                const q = document.getElementById('sidebarFolderSearch').value.toLowerCase().trim();
+                const folderLis = document.querySelectorAll('.sidebar-folder-li');
+
+                if (!q) {
+                    folderLis.forEach(li => li.style.display = '');
+                    return;
+                }
+
+                expandAllSidebarFolders();
+
+                folderLis.forEach(li => {
+                    const name = li.dataset.folderName || '';
+                    const hasMatch = name.includes(q);
+
+                    let childMatch = false;
+                    li.querySelectorAll('.sidebar-folder-li').forEach(c => {
+                        if ((c.dataset.folderName || '').includes(q)) childMatch = true;
+                    });
+
+                    if (hasMatch || childMatch) {
+                        li.style.display = '';
+                    } else {
+                        const parentId = li.dataset.parentId;
+                        const parentLi = parentId ? document.querySelector(`.sidebar-folder-li[data-folder-id="${parentId}"]`) : null;
+                        if (parentLi && (parentLi.dataset.folderName || '').includes(q)) {
+                            li.style.display = '';
+                        } else {
+                            li.style.display = 'none';
+                        }
+                    }
+                });
+            }
+
+            function clearSidebarFolderSearch() {
+                document.getElementById('sidebarFolderSearch').value = '';
+                filterSidebarFolders();
+            }
+
             function selectFolder(folderId) {
                 console.log('selectFolder called with:', folderId);
                 currentFolder = folderId;
@@ -1013,16 +1201,31 @@
                 const clickedItem = document.querySelector(`[onclick="selectFolder('${folderId}')"]`);
                 if (clickedItem) {
                     clickedItem.classList.add('active');
+
+                    // Auto expand parent folder if in subfolder
+                    const parentLi = clickedItem.closest('.sidebar-folder-li');
+                    if (parentLi && parentLi.dataset.parentId) {
+                        const parentNested = document.getElementById('nested-' + parentLi.dataset.parentId);
+                        const parentToggle = document.getElementById('toggle-btn-' + parentLi.dataset.parentId);
+                        if (parentNested) parentNested.classList.remove('collapsed');
+                        if (parentToggle) parentToggle.classList.add('expanded');
+                    }
                 }
 
                 if (folderId === 'root') {
                     updateBreadcrumb('{{ $course->title }}');
+                    const paneTitle = document.getElementById('centralPaneTitle');
+                    const paneCount = document.getElementById('centralPaneCount');
+                    if (paneTitle) paneTitle.textContent = '{{ $course->title }} (Root)';
+                    if (paneCount) paneCount.textContent = '{{ $course->folders->count() }} folders, {{ $course->lessons->where("folder_id", null)->count() }} lessons, {{ $course->tests->count() }} tests';
                 } else {
                     // Get folder name from the clicked element
-                    const folderName = clickedItem ? clickedItem.textContent.trim() : 'Folder';
+                    const folderName = clickedItem ? (clickedItem.querySelector('.folder-name')?.textContent.trim() || clickedItem.textContent.trim()) : 'Folder';
                     updateBreadcrumb(folderName);
+                    const paneTitle = document.getElementById('centralPaneTitle');
+                    if (paneTitle) paneTitle.textContent = folderName;
                 }
-                
+
                 // Update URL state
                 const url = new URL(window.location);
                 if (folderId === 'root') {
@@ -1500,7 +1703,7 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            renderFolderContents(data.contents, folderId);
+                            renderFolderContents(data.contents, folderId, data.folder);
                         } else {
                             contentArea.innerHTML = '<div class="text-center py-5 text-danger"><i class="bi bi-exclamation-triangle"></i> Error loading folder contents</div>';
                         }
@@ -1512,8 +1715,22 @@
             }
 
             // Render folder contents in the main area
-            function renderFolderContents(contents, folderId) {
+            function renderFolderContents(contents, folderId, folderInfo) {
                 const contentArea = document.getElementById('fileList');
+
+                // Update central pane title and count
+                const paneTitle = document.getElementById('centralPaneTitle');
+                const paneCount = document.getElementById('centralPaneCount');
+                if (paneTitle && folderInfo) {
+                    paneTitle.textContent = folderInfo.name;
+                }
+                if (paneCount && contents) {
+                    const totalCount = (contents.folders ? contents.folders.length : 0) +
+                                       (contents.lessons ? contents.lessons.length : 0) +
+                                       (contents.tests ? contents.tests.length : 0) +
+                                       (contents.files ? contents.files.length : 0);
+                    paneCount.textContent = `${totalCount} item(s) in this folder`;
+                }
 
                 if (!contents || (contents.folders.length === 0 && contents.lessons.length === 0 && contents.tests.length === 0 && (!contents.files || contents.files.length === 0))) {
                     contentArea.innerHTML = `
