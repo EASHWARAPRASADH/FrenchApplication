@@ -89,7 +89,7 @@
                             <div class="course-meta-simple">
                                 <div class="course-meta-item">
                                     <i class="bi bi-person"></i>
-                                    <span>{{ $course->teacher->name }}</span>
+                                    <span>{{ $course->teacher?->name ?? 'Instructor' }}</span>
                                 </div>
                                 @if($course->average_rating > 0)
                                     <div class="course-meta-item">

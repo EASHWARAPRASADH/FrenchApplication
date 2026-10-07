@@ -76,7 +76,7 @@
                         <i class="bi bi-person-circle"></i>
                         <div>
                             <span class="teacher-label">Instructor</span>
-                            <span class="teacher-name">{{ $course->teacher->name }}</span>
+                            <span class="teacher-name">{{ $course->teacher?->name ?? 'Instructor' }}</span>
                         </div>
                     </div>
 
@@ -205,10 +205,10 @@
                         </h5>
                     </div>
                     <div class="card-body text-center">
-                        <img src="https://ui-avatars.com/api/?name={{ urlencode($course->teacher->name) }}&color=7F9CF5&background=EBF4FF&size=100" 
-                             alt="{{ $course->teacher->name }}" class="rounded-circle mb-3" width="100" height="100">
-                        <h6 class="fw-bold">{{ $course->teacher->name }}</h6>
-                        @if($course->teacher->bio)
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode($course->teacher?->name ?? 'Instructor') }}&color=7F9CF5&background=EBF4FF&size=100" 
+                             alt="{{ $course->teacher?->name ?? 'Instructor' }}" class="rounded-circle mb-3" width="100" height="100">
+                        <h6 class="fw-bold">{{ $course->teacher?->name ?? 'Instructor' }}</h6>
+                        @if($course->teacher?->bio)
                             <p class="text-muted small">{{ Str::limit($course->teacher->bio, 150) }}</p>
                         @endif
                         <div class="row text-center mt-3">

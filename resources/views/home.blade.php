@@ -229,7 +229,7 @@
                             <div class="course-meta-new">
                                 <div class="course-meta-item">
                                     <i class="bi bi-person"></i>
-                                    <span>{{ $course->teacher->name }}</span>
+                                    <span>{{ $course->teacher?->name ?? 'Instructor' }}</span>
                                 </div>
                                 <div class="course-meta-item">
                                     <i class="bi bi-clock"></i>

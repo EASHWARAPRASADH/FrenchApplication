@@ -191,7 +191,7 @@
         </style>
     <link href="{{ asset('new-assets/css/theme-overrides.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('new-assets/css/theme-fonts-overrides.css') }}" rel="stylesheet" type="text/css" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css') }}" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
 </head>
 
 <body>
@@ -557,7 +557,7 @@
 
             <section id="footer-section" class="footer accent-background footer_component footer-video">
   <div class="footer-video-bg" style="position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;z-index:0;">
-    <video autoplay muted loop playsinline poster="../images/footer-fallback.jpg') }}" style="width:100%;height:100%;object-fit:cover;">
+    <video autoplay muted loop playsinline poster="{{ asset('new-assets/images/footer-fallback.jpg') }}" style="width:100%;height:100%;object-fit:cover;">
       <source src="{{ asset('new-assets/images/footer.mp4') }}" type="video/mp4" />
     </video>
     <div class="footer-video-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div>

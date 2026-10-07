@@ -8,8 +8,8 @@
     <meta content="Explore our comprehensive French language courses from beginner (A1, A2) to advanced (C1, C2) levels. Join interactive group lessons with world-class instructors." name="description" />
     <meta content="width=device-width, initial-scale=1" name="viewport" />
     <link href="{{ asset('new-assets/css/main.css') }}" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css') }}" integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcgl9M+6dLJdzfHn1PZK7zF9O6Rz3iFfXb6l5z5u5u5u5u5u5u5u5u5u5u5u5u5u5u5u5u" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css') }}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcgl9M+6dLJdzfHn1PZK7zF9O6Rz3iFfXb6l5z5u5u5u5u5u5u5u5u5u5u5u5u5u5u5u5u" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link href="{{ asset('new-assets/css/radial-orbital-timeline.css') }}" rel="stylesheet" type="text/css" />
     <style>
         * {
@@ -97,7 +97,7 @@
         </style>
     <link href="{{ asset('new-assets/css/theme-overrides.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('new-assets/css/theme-fonts-overrides.css') }}" rel="stylesheet" type="text/css" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css') }}" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
 </head>
 
 <body>
@@ -856,7 +856,7 @@
 
         <section id="footer-section" class="footer accent-background footer_component footer-video">
   <div class="footer-video-bg">
-    <video autoplay muted loop playsinline poster="../images/footer-fallback.jpg') }}">
+    <video autoplay muted loop playsinline poster="{{ asset('new-assets/images/footer-fallback.jpg') }}">
       <source src="{{ asset('new-assets/images/footer.mp4') }}" type="video/mp4" />
     </video>
     <div class="footer-video-overlay"></div>
@@ -913,7 +913,7 @@
     </main>
     </div>
     <script src="https://d3e54v103j8qbb.cloudfront.net/js/jquery-3.5.1.min.dc5e7f18c8.js?site=65f05b39b3ea937565a75298" type="text/javascript" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
-    <script src="https://cdn.prod.website-files.com/65f05b39b3ea937565a75298/js/webflow.98f3efb7d.js') }}" type="text/javascript"></script>
+    <script src="https://cdn.prod.website-files.com/65f05b39b3ea937565a75298/js/webflow.98f3efb7d.js" type="text/javascript"></script>
     <script type="module">
         import { Warp } from 'https://cdn.skypack.dev/@paper-design/shaders-react';
         import { render } from 'https://cdn.skypack.dev/preact-render-to-string';

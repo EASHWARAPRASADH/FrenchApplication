@@ -334,7 +334,7 @@
                                     <div class="course-title">{{ $course->title }}</div>
                                     <div class="course-teacher">
                                         <i class="bi bi-person me-1"></i>
-                                        {{ $course->teacher->name }}
+                                        {{ $course->teacher?->name ?? 'Instructor' }}
                                     </div>
                                 </div>
 

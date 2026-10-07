@@ -92,14 +92,30 @@ Route::get('/files/{path}', function ($path) {
 
     $fullPath = storage_path('app/public/' . $path);
 
-    // Check if file exists
+    // Check if file exists, with url-decoding and uploads fallback support
     if (!file_exists($fullPath) || !is_file($fullPath)) {
-        abort(404, 'File not found');
+        $decoded = storage_path('app/public/' . urldecode($path));
+        if (file_exists($decoded) && is_file($decoded)) {
+            $fullPath = $decoded;
+        } else {
+            $uploadsFallback = base_path('storage/uploads/' . $path);
+            if (file_exists($uploadsFallback) && is_file($uploadsFallback)) {
+                $fullPath = $uploadsFallback;
+            } else {
+                $uploadsDecoded = base_path('storage/uploads/' . urldecode($path));
+                if (file_exists($uploadsDecoded) && is_file($uploadsDecoded)) {
+                    $fullPath = $uploadsDecoded;
+                } else {
+                    abort(404, 'File not found');
+                }
+            }
+        }
     }
 
-    $allowedDir = realpath(storage_path('app/public'));
+    $allowedDirPublic = realpath(storage_path('app/public'));
+    $allowedDirUploads = realpath(base_path('storage/uploads'));
     $real = realpath($fullPath);
-    if (!$real || !$allowedDir || !str_starts_with($real, $allowedDir)) {
+    if (!$real || (!($allowedDirPublic && str_starts_with($real, $allowedDirPublic)) && !($allowedDirUploads && str_starts_with($real, $allowedDirUploads)))) {
         abort(403, 'Access denied');
     }
 
@@ -151,6 +167,11 @@ Route::get('/files/{path}', function ($path) {
 
     return response()->file($fullPath, $headers);
 })->where('path', '.*')->name('serve-storage');
+
+// Direct alias for /storage/courses/{path} to /files/courses/{path}
+Route::get('/storage/courses/{path}', function ($path) {
+    return redirect('/files/courses/' . $path);
+})->where('path', '.*');
 
 // Redirect dashboard based on user role
 Route::get('/dashboard', function () {

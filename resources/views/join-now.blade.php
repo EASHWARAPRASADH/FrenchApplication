@@ -135,9 +135,9 @@
             n.className += t + "js", ("ontouchstart" in o || o.DocumentTouch && c instanceof DocumentTouch) && (n.className += t + "touch")
         }(window, document);
     </script>
-    <link href="https://cd.prod.website-files.com/65f05b39b3ea937565a75298/65f0606054bc714a165f918b_Logo%2032x32.png') }}" rel="shortcut icon" type="image/x-icon" />
-    <link href="https://cdn.rod.website-files.com/65f05b39b3ea937565a75298/65f06065f6dfae775d8a6b3e_Logo%20256x256.png') }}" rel="apple-touch-icon" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css') }}" rel="stylesheet" />
+    <link href="https://cdn.prod.website-files.com/65f05b39b3ea937565a75298/65f0606054bc714a165f918b_Logo%2032x32.png" rel="shortcut icon" type="image/x-icon" />
+    <link href="https://cdn.prod.website-files.com/65f05b39b3ea937565a75298/65f06065f6dfae775d8a6b3e_Logo%20256x256.png" rel="apple-touch-icon" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
         <style>
                 /* Mobile nav join button: hidden on desktop, visible on small screens */
                 .nav-join-mobile { display: none; }
@@ -206,9 +206,9 @@
             </section>
 
             <!-- React & dependencies -->
-            <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js') }}"></script>
-            <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js') }}"></script>
-            <script src="https://unpkg.com/@babel/standalone/babel.min.js') }}"></script>
+            <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+            <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+            <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
             <!-- Tailwind CSS -->
             <script src="https://cdn.tailwindcss.com"></script>
@@ -729,7 +729,7 @@
 
             <section id="footer-section" class="footer accent-background footer_component footer-video">
   <div class="footer-video-bg">
-    <video autoplay muted loop playsinline poster="../images/footer-fallback.jpg') }}">
+    <video autoplay muted loop playsinline poster="{{ asset('new-assets/images/footer-fallback.jpg') }}">
       <source src="{{ asset('new-assets/images/footer.mp4') }}" type="video/mp4" />
     </video>
     <div class="footer-video-overlay"></div>
@@ -816,7 +816,7 @@
         }
     </script>
     <script src="https://d3e54v103j8qbb.cloudfront.net/js/jquery-3.5.1.min.dc5e7f18c8.js?site=65f05b39b3ea937565a75298" type="text/javascript" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
-    <script src="https://cdn.prod.website-files.com/65f05b39b3ea937565a75298/js/webflow.98f3efb7d.js') }}" type="text/javascript"></script>
+    <script src="https://cdn.prod.website-files.com/65f05b39b3ea937565a75298/js/webflow.98f3efb7d.js" type="text/javascript"></script>
 </body>
 
 </html> 
