@@ -83,11 +83,10 @@ Route::get('/files/{path}', function ($path) {
 
     $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
     $isOfficeDoc = in_array($ext, ['docx', 'pptx', 'xlsx', 'doc', 'ppt', 'xls'], true);
-    $ua = strtolower(request()->header('User-Agent', ''));
-    $isExternalOfficeViewer = $isOfficeDoc && (str_contains($ua, 'office') || str_contains($ua, 'microsoft'));
 
-    // Require authentication unless request is from Microsoft Office Online viewer for doc preview
-    if (!auth()->check() && !$isExternalOfficeViewer) {
+    // Office documents (.pptx, .docx, .xlsx) are rendered via cloud embedders (Microsoft Office Online / Google Docs Viewer).
+    // All other media (audio, video, tests, images, PDFs) strictly require active user authentication!
+    if (!$isOfficeDoc && !auth()->check()) {
         abort(403, 'Access denied. Please sign in to access course materials.');
     }
 
@@ -134,14 +133,23 @@ Route::get('/files/{path}', function ($path) {
 
     $contentType = $mimeTypes[$ext] ?? 'application/octet-stream';
 
-    // Return file with strict security and privacy headers
-    return response()->file($fullPath, [
+    $headers = [
         'Content-Type' => $contentType,
         'Accept-Ranges' => 'bytes',
         'X-Content-Type-Options' => 'nosniff',
-        'Cache-Control' => 'private, no-cache, no-store, must-revalidate',
-        'Pragma' => 'no-cache',
-    ]);
+    ];
+
+    if ($isOfficeDoc) {
+        // Allow Microsoft Office Online Viewer and Google Docs Viewer to embed and render slides
+        $headers['Access-Control-Allow-Origin'] = '*';
+        $headers['Access-Control-Allow-Methods'] = 'GET, HEAD, OPTIONS';
+        $headers['Cache-Control'] = 'public, max-age=3600';
+    } else {
+        $headers['Cache-Control'] = 'private, no-cache, no-store, must-revalidate';
+        $headers['Pragma'] = 'no-cache';
+    }
+
+    return response()->file($fullPath, $headers);
 })->where('path', '.*')->name('serve-storage');
 
 // Redirect dashboard based on user role

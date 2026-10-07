@@ -31,15 +31,16 @@ DirectoryIndex index.html index.php
     RewriteRule ^(artisan|composer\.(json|lock)|package(-lock)?\.json)$ - [F,L]
 
     # C. Block automated scraping bots, CLI downloaders, and vulnerability crawlers from harvesting storage & media
+    RewriteCond %{REQUEST_URI} !\.(docx?|pptx?|xlsx?)$ [NC]
     RewriteCond %{HTTP_USER_AGENT} (curl|wget|python-requests|python-urllib|scrapy|aiohttp|go-http-client|httpie|libwww-perl|sqlmap|nikto|wpscan|HTTrack|teleport|masscan|zgrab) [NC]
     RewriteCond %{REQUEST_URI} ^/(storage/|files/|file/) [NC]
     RewriteRule ^ - [F,L]
 
     # D. Anti-Hotlinking: Prevent external websites from leeching proprietary audio and lesson documents
     RewriteCond %{HTTP_REFERER} !^$
-    RewriteCond %{HTTP_REFERER} !^https?://(www\.)?tslanguageschool\.com [NC]
-    RewriteCond %{HTTP_REFERER} !^https?://view\.officeapps\.live\.com [NC]
-    RewriteCond %{HTTP_REFERER} !^https?://docs\.google\.com [NC]
+    RewriteCond %{HTTP_REFERER} !^https?://([a-z0-9-]+\.)*tslanguageschool\.com [NC]
+    RewriteCond %{HTTP_REFERER} !^https?://([a-z0-9-]+\.)*(officeapps\.live\.com|office\.com|office\.net|live\.com|microsoft\.com) [NC]
+    RewriteCond %{HTTP_REFERER} !^https?://([a-z0-9-]+\.)*(google\.com|googleusercontent\.com) [NC]
     RewriteCond %{REQUEST_URI} \.(mp3|wav|ogg|m4a|pdf|doc|docx|ppt|pptx|xls|xlsx)$ [NC]
     RewriteRule ^ - [F,L]
 
