@@ -234,7 +234,7 @@ export default function Home() {
             {[
               { name: 'Arun', role: 'Head of French Department', img: arun },
               { name: 'Akansha Arora', role: 'TCF/TEF Examiner & Tutor', img: akansha },
-              { name: 'Yusuf Fayas', role: 'TCF/TEF Examiner & Tutor', img: yusurf },
+              { name: 'Yusuf', role: 'TCF/TEF Examiner & Tutor', img: yusurf },
               { name: 'Cyrille Helena', role: 'DALF Advanced Instructor', img: cyrille }
             ].map((member, idx) => (
               <div key={idx} className="bg-white rounded-sm border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">

@@ -343,7 +343,7 @@ const App: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               <InstructorCard name="Arun" role="Head of French Dept." img={arun} delay="0s" />
               <InstructorCard name="Akansha Arora" role="Senior Instructor" img={akansha} delay="0.1s" />
-              <InstructorCard name="Yusuf Fayas" role="Proficiency Specialist" img={yusurf} delay="0.2s" />
+              <InstructorCard name="Yusuf" role="Proficiency Specialist" img={yusurf} delay="0.2s" />
               <InstructorCard name="Cyrille Helena" role="DALF Expert" img={cyrille} delay="0.3s" />
             </div>
           </div>
